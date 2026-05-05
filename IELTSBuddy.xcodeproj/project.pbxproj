@@ -6,14 +6,7 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		17B65CD92FA87F8900C581F9 /* Secrets.example.plist in Resources */ = {isa = PBXBuildFile; fileRef = 17B65CD82FA87F8900C581F9 /* Secrets.example.plist */; };
-		17B65CDD2FA9AC3400C581F9 /* Secrets.plist in Resources */ = {isa = PBXBuildFile; fileRef = 17B65CDC2FA9AC3400C581F9 /* Secrets.plist */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
-		17B65CD82FA87F8900C581F9 /* Secrets.example.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.example.plist; sourceTree = "<group>"; };
-		17B65CDC2FA9AC3400C581F9 /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Secrets.plist; sourceTree = "<group>"; };
 		51741CF82FA70E5500C6594D /* IELTSBuddy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IELTSBuddy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -39,8 +32,6 @@
 		51741CEF2FA70E5500C6594D = {
 			isa = PBXGroup;
 			children = (
-				17B65CD82FA87F8900C581F9 /* Secrets.example.plist */,
-				17B65CDC2FA9AC3400C581F9 /* Secrets.plist */,
 				51741CFA2FA70E5500C6594D /* IELTSBuddy */,
 				51741CF92FA70E5500C6594D /* Products */,
 			);
@@ -118,8 +109,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				17B65CD92FA87F8900C581F9 /* Secrets.example.plist in Resources */,
-				17B65CDD2FA9AC3400C581F9 /* Secrets.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -262,11 +251,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = GYWY2SM773;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "IELTSBuddy needs microphone access to transcribe your speaking practice.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "IELTSBuddy uses speech recognition to turn your practice answers into text.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -296,11 +282,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = GYWY2SM773;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "IELTSBuddy needs microphone access to transcribe your speaking practice.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "IELTSBuddy uses speech recognition to turn your practice answers into text.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
