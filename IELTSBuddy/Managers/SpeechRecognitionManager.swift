@@ -85,12 +85,7 @@ final class SpeechRecognitionManager: ObservableObject {
     }
 
     func stopRecording() {
-        recognitionTask?.cancel()
-        recognitionTask = nil
-
-        recognitionRequest?.endAudio()
-        recognitionRequest = nil
-
+       //stop mic input
         if audioTapInstalled {
             audioEngine.inputNode.removeTap(onBus: 0)
             audioTapInstalled = false
@@ -99,7 +94,11 @@ final class SpeechRecognitionManager: ObservableObject {
         if audioEngine.isRunning {
             audioEngine.stop()
         }
+        
+        //end audio
+        recognitionRequest?.endAudio()
 
+        //deactivate audio session
         let audioSession = AVAudioSession.sharedInstance()
         try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
 
