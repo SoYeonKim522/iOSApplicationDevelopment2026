@@ -11,8 +11,19 @@ class HistoryViewModel: ObservableObject {
     
     @Published var sessions: [AIFeedback] = []
     @Published var selectedSession: AIFeedback? = nil
+    @Published var errorMessage: String? = nil
+    private let storageKey = "savedSessions"
+  
+    private func persistSessions() {
+            do {
+                let encoded = try JSONEncoder().encode(sessions)
+                UserDefaults.standard.set(encoded, forKey: storageKey)
+            } catch {
+                print("Failed to save sessions: \(error)")
+                errorMessage = "Something went wrong. Please try again."
+            }
+        }
     
-    // loads all past sessions from UserDefaults
     func loadSessions() {
         let decoder = JSONDecoder()
         if let data = UserDefaults.standard.data(forKey: "savedSessions"),
@@ -43,4 +54,12 @@ class HistoryViewModel: ObservableObject {
             UserDefaults.standard.set(encoded, forKey: "savedSessions")
         }
     }
+    
+    var totalSessions: Int {
+            sessions.count
+        }
+    
+    func sessions(above score: Double) -> [AIFeedback] {
+            sessions.filter { $0.overallScore >= score }
+        }
 }
