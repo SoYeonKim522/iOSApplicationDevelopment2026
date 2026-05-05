@@ -12,7 +12,7 @@ enum ErrorType: String, Codable, CaseIterable {
 }
 
 struct ReviewLog: Codable, Identifiable, Equatable {
-    let id: UUID
+    var id = UUID()
     let original: String
     let corrected: String
     let type: ErrorType
@@ -24,20 +24,6 @@ struct ReviewLog: Codable, Identifiable, Equatable {
         case corrected
         case type
         case explanation
-    }
-
-    init(
-        id: UUID = UUID(),
-        original: String,
-        corrected: String,
-        type: ErrorType,
-        explanation: String = ""
-    ) {
-        self.id = id
-        self.original = original
-        self.corrected = corrected
-        self.type = type
-        self.explanation = explanation
     }
 
     init(from decoder: Decoder) throws {

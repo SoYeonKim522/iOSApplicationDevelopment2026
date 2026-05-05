@@ -16,6 +16,7 @@ struct FeedbackResultView: View {
     @State private var errorMessage: String?
     @State private var audioPlayer: AVAudioPlayer?
     @State private var isPlaying = false
+    @State private var savedLogIDs: Set<UUID> = []
 
     private let aiFeedbackService = AIFeedbackService()
 
@@ -62,17 +63,65 @@ struct FeedbackResultView: View {
                     Text(String(format: "Pronunciation: %.1f", feedbackResult.pronunciationScore))
                 }
 
-                Text("Review Logs")
+                Text("Key Corrections")
                     .font(.headline)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(feedbackResult.reviewLogs) { log in
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Original: \(log.original)")
-                                Text("Corrected: \(log.corrected)")
-                                Text("Explanation: \(log.explanation)")
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack(alignment: .top) {
+                                    Text(log.type.rawValue.capitalized)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button {
+                                        toggleSaved(log.id)
+                                    } label: {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: savedLogIDs.contains(log.id) ? "checkmark.circle.fill" : "plus.circle")
+                                                .font(.system(size: 18, weight: .semibold))
+                                            if savedLogIDs.contains(log.id) {
+                                                Text("Saved")
+                                                    .font(.caption)
+                                                    .fontWeight(.semibold)
+                                            }
+                                        }
+                                        .foregroundStyle(savedLogIDs.contains(log.id) ? Color.green : Color.primary)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 10)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(savedLogIDs.contains(log.id) ? "Saved mistake" : "Save mistake")
+                                }
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Original")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(log.original)
+                                }
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Corrected")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(log.corrected)
+                                }
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Explanation")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(log.explanation)
+                                }
                             }
                             .font(.footnote)
+                            .padding(14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(red: 0.95, green: 0.92, blue: 0.88))
+                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .shadow(color: .black.opacity(0.07), radius: 6, x: 0, y: 2)
                         }
                     }
                 }
@@ -127,6 +176,16 @@ struct FeedbackResultView: View {
             isPlaying = true
         } catch {
             isPlaying = false
+        }
+    }
+
+    private func toggleSaved(_ id: UUID) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if savedLogIDs.contains(id) {
+                savedLogIDs.remove(id)
+            } else {
+                savedLogIDs.insert(id)
+            }
         }
     }
 }

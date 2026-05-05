@@ -13,7 +13,7 @@ struct RecordingTestView: View {
     @State private var currentQuestion: PracticeQuestion?
 
     @State private var questionGeneratorError: String?
-    @State private var isGeneratingQuestion = false
+    @State private var isGeneratingQuestion: Bool = false
     @State private var recordingTime: Int = 0
     @State private var timer: Timer?
     @State private var navigateToFeedback = false
@@ -45,9 +45,17 @@ struct RecordingTestView: View {
                 Button("Generate Question") {
                     Task { await generateQuestionTapped() }
                 }
+                .buttonStyle(.borderedProminent)
                 .disabled(isGeneratingQuestion)
 
-                Text(currentQuestion?.text ?? "No question generated yet.")
+                if isGeneratingQuestion {
+                    ProgressView("Generating question...")
+                } else if let currentQuestion {
+                    Text(currentQuestion.text)
+                } else {
+                    Text("No question generated yet.")
+                        .foregroundStyle(.secondary)
+                }
 
                 if let message = questionGeneratorError {
                     Text(message)
@@ -104,6 +112,7 @@ struct RecordingTestView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .frame(maxWidth: .infinity)
+                .disabled(!manager.isRecording && currentQuestion == nil)
             }
             .navigationTitle("Recording Test")
             .navigationDestination(isPresented: $navigateToFeedback) {
