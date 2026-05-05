@@ -109,7 +109,8 @@ struct RecordingTestView: View {
             .navigationDestination(isPresented: $navigateToFeedback) {
                 FeedbackResultView(
                     questionText: currentQuestion?.text ?? "",
-                    transcript: manager.transcript
+                    transcript: manager.transcript,
+                    audioFileURL: manager.audioFileURL
                 )
             }
         }

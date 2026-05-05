@@ -14,6 +14,9 @@ final class SpeechRecognitionManager: ObservableObject {
     @Published var isRecording: Bool = false
     @Published var errorMessage: String?
 
+    var audioFileURL: URL?
+    var audioFile: AVAudioFile?
+
     private let audioEngine = AVAudioEngine()
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
@@ -85,7 +88,7 @@ final class SpeechRecognitionManager: ObservableObject {
     }
 
     func stopRecording() {
-       //stop mic input
+        // stop mic input
         if audioTapInstalled {
             audioEngine.inputNode.removeTap(onBus: 0)
             audioTapInstalled = false
@@ -94,11 +97,17 @@ final class SpeechRecognitionManager: ObservableObject {
         if audioEngine.isRunning {
             audioEngine.stop()
         }
-        
-        //end audio
-        recognitionRequest?.endAudio()
 
-        //deactivate audio session
+        // end audio
+        recognitionRequest?.endAudio()
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest = nil
+
+        // close file handle to flush to disk
+        audioFile = nil
+
+        // deactivate audio session
         let audioSession = AVAudioSession.sharedInstance()
         try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
 
@@ -116,6 +125,7 @@ final class SpeechRecognitionManager: ObservableObject {
         if audioEngine.isRunning {
             audioEngine.stop()
         }
+        audioFile = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         isRecording = false
     }
@@ -135,9 +145,26 @@ final class SpeechRecognitionManager: ObservableObject {
 
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
+        let audioFileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("recording-\(UUID().uuidString).caf")
+        self.audioFileURL = audioFileURL
+        self.audioFile = try AVAudioFile(forWriting: audioFileURL, settings: recordingFormat.settings)
+        let recognitionRequestForTap = recognitionRequest
+        let audioFileForTap = self.audioFile
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
+            recognitionRequestForTap.append(buffer)
+            if let audioFileForTap {
+                do {
+                    try audioFileForTap.write(from: buffer)
+                } catch {
+                    Task { @MainActor in
+                        if self?.errorMessage == nil {
+                            self?.errorMessage = "Unable to save recorded audio."
+                        }
+                    }
+                }
+            }
         }
         audioTapInstalled = true
 
