@@ -25,11 +25,13 @@ class HistoryViewModel: ObservableObject {
         }
     
     func loadSessions() {
-        let decoder = JSONDecoder()
-        if let data = UserDefaults.standard.data(forKey: "savedSessions"),
-           let decoded = try? decoder.decode([AIFeedback].self, from: data) {
-            sessions = decoded
-        }
+        do {
+                guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
+                sessions = try JSONDecoder().decode([AIFeedback].self, from: data)
+            } catch {
+                print("Failed to load sessions: \(error)")
+                errorMessage = "Could not load your history. Please try again."
+            }
     }
     
     // saves a new session after practice
