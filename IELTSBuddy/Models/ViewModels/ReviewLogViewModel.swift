@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import SwiftUI
+import Combine
 
 class ReviewLogViewModel: ObservableObject {
     
