@@ -16,6 +16,7 @@ struct FeedbackResultView: View {
     @State private var errorMessage: String?
     @State private var audioPlayer: AVAudioPlayer?
     @State private var isPlaying = false
+    @State private var playbackMonitor: Timer?
     @State private var savedLogIDs: Set<UUID> = []
 
     private let aiFeedbackService = AIFeedbackService()
@@ -133,13 +134,77 @@ struct FeedbackResultView: View {
             await loadFeedback()
         }
         .onDisappear {
+            stopPlaybackMonitoring()
             audioPlayer?.stop()
             isPlaying = false
+        }
+        .safeAreaInset(edge: .bottom) {
+
+            if isLoading {
+                EmptyView()
+            } else if errorMessage != nil {
+
+                // error -> Retry button only
+                Button {
+                    Task {
+                        await loadFeedback()
+                    }
+                } label: {
+                    Text("Retry")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.accentColor, lineWidth: 1)
+                )
+                .padding()
+                .background(.ultraThinMaterial)
+
+            } else if feedbackResult != nil {
+
+                // success -> Retry + Next Question
+                HStack(spacing: 12) {
+
+                    Button {
+                        Task {
+                            await loadFeedback()
+                        }
+                    } label: {
+                        Text("Retry")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.accentColor, lineWidth: 1)
+                    )
+
+                    Button {
+                    } label: {
+                        Text("Next Question")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .foregroundStyle(.white)
+                    }
+                    .background(Color.accentColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding()
+            }
         }
     }
 
     @MainActor
     private func loadFeedback() async {
+        // Preview case -> skip api call
+            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+                self.feedbackResult = AIFeedback.mock
+                self.isLoading = false
+                return
+            }
+        // ends
+        
         isLoading = true
         errorMessage = nil
 
@@ -160,6 +225,7 @@ struct FeedbackResultView: View {
 
         if isPlaying {
             audioPlayer?.stop()
+            stopPlaybackMonitoring()
             isPlaying = false
             return
         }
@@ -174,9 +240,32 @@ struct FeedbackResultView: View {
             player.play()
             audioPlayer = player
             isPlaying = true
+            startPlaybackMonitoring()
         } catch {
+            stopPlaybackMonitoring()
             isPlaying = false
         }
+    }
+
+    private func startPlaybackMonitoring() {
+        stopPlaybackMonitoring()
+        playbackMonitor = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
+            guard let audioPlayer else {
+                stopPlaybackMonitoring()
+                isPlaying = false
+                return
+            }
+
+            if !audioPlayer.isPlaying {
+                stopPlaybackMonitoring()
+                isPlaying = false
+            }
+        }
+    }
+
+    private func stopPlaybackMonitoring() {
+        playbackMonitor?.invalidate()
+        playbackMonitor = nil
     }
 
     private func toggleSaved(_ id: UUID) {
