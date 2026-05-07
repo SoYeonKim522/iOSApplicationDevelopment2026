@@ -87,3 +87,31 @@ struct AIFeedback: Codable, Identifiable, Equatable {
         try container.encode(reviewLogs, forKey: .reviewLogs)
     }
 }
+
+
+extension AIFeedback {
+    static let mock = AIFeedback(
+        questionText: "Describe your hometown.",
+        userAnswer: "My hometown is very beautiful",
+        overallScore: 7.5,
+        fluencyScore: 7.0,
+        vocabularyScore: 7.5,
+        grammarScore: 7.0,
+        pronunciationScore: 8.0,
+        feedback: FeedbackComment(
+            strengths: "Clear basic description.",
+            weaknesses: "Lacks detail and complex structures.",
+            ideaSuggestion: "Add examples and sensory details."
+        ),
+        reviewLogs: [
+            ReviewLog(
+                id: UUID(),
+                type: .grammar,
+                original: "My hometown is very beautiful",
+                corrected: "My hometown is very beautiful.",
+                explanation: "Add a full stop at the end of the sentence.",
+                
+            )
+        ]
+    )
+}

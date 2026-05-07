@@ -138,10 +138,73 @@ struct FeedbackResultView: View {
             audioPlayer?.stop()
             isPlaying = false
         }
+        .safeAreaInset(edge: .bottom) {
+
+            if isLoading {
+                EmptyView()
+            } else if errorMessage != nil {
+
+                // error -> Retry button only
+                Button {
+                    Task {
+                        await loadFeedback()
+                    }
+                } label: {
+                    Text("Retry")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.accentColor, lineWidth: 1)
+                )
+                .padding()
+                .background(.ultraThinMaterial)
+
+            } else if feedbackResult != nil {
+
+                // success -> Retry + Next Question
+                HStack(spacing: 12) {
+
+                    Button {
+                        Task {
+                            await loadFeedback()
+                        }
+                    } label: {
+                        Text("Retry")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.accentColor, lineWidth: 1)
+                    )
+
+                    Button {
+                    } label: {
+                        Text("Next Question")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .foregroundStyle(.white)
+                    }
+                    .background(Color.accentColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding()
+            }
+        }
     }
 
     @MainActor
     private func loadFeedback() async {
+        // Preview case -> skip api call
+            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+                self.feedbackResult = AIFeedback.mock
+                self.isLoading = false
+                return
+            }
+        // ends
+        
         isLoading = true
         errorMessage = nil
 
