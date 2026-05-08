@@ -130,5 +130,7 @@ struct HistoryDetailView: View {
     }
 }
 #Preview {
-    HistoryView()
+    let vm = HistoryViewModel()
+    vm.sessions = [AIFeedback.mock]
+    HistoryView(viewModel: vm)
 }
