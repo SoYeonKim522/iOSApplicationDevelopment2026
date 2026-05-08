@@ -13,6 +13,7 @@ struct FeedbackComment: Codable, Equatable {
 
 struct AIFeedback: Codable, Identifiable, Equatable {
     let id: UUID
+    let date: Date
     let questionText: String
     let userAnswer: String
     let overallScore: Double
@@ -25,6 +26,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id
+        case date
         case questionText
         case userAnswer
         case overallScore
@@ -38,6 +40,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
 
     init(
         id: UUID = UUID(),
+        date: Date = Date(),
         questionText: String,
         userAnswer: String,
         overallScore: Double,
@@ -49,6 +52,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
         reviewLogs: [ReviewLog]
     ) {
         self.id = id
+        self.date = date
         self.questionText = questionText
         self.userAnswer = userAnswer
         self.overallScore = overallScore
@@ -63,6 +67,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        date = try container.decodeIfPresent(Date.self, forKey: .date) ?? Date()
         questionText = try container.decode(String.self, forKey: .questionText)
         userAnswer = try container.decode(String.self, forKey: .userAnswer)
         overallScore = try container.decode(Double.self, forKey: .overallScore)
@@ -76,6 +81,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(date, forKey: .date)
         try container.encode(questionText, forKey: .questionText)
         try container.encode(userAnswer, forKey: .userAnswer)
         try container.encode(overallScore, forKey: .overallScore)

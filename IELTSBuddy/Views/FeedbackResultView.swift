@@ -20,7 +20,8 @@ struct FeedbackResultView: View {
     @State private var savedLogIDs: Set<UUID> = []
 
     private let aiFeedbackService = AIFeedbackService()
-
+    private let historyViewModel = HistoryViewModel()
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if isLoading {
@@ -213,6 +214,9 @@ struct FeedbackResultView: View {
                 question: questionText,
                 userAnswer: transcript
             )
+            if let result = feedbackResult {
+                    historyViewModel.saveSession(result)
+                }
         } catch {
             errorMessage = error.localizedDescription
         }
