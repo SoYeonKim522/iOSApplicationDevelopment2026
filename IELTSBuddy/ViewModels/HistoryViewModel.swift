@@ -38,11 +38,9 @@ class HistoryViewModel: ObservableObject {
     
     // saves a new session after practice
     func saveSession(_ feedback: AIFeedback) {
+        loadSessions()
         sessions.append(feedback)
-        let encoder = JSONEncoder()
-        if let encoded = try? encoder.encode(sessions) {
-            UserDefaults.standard.set(encoded, forKey: "savedSessions")
-        }
+        persistSessions()
     }
     
     // called when user taps a session in the list

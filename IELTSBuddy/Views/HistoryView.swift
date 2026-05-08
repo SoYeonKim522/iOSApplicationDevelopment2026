@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftUI
 import Combine
 
 struct HistoryView: View {
@@ -40,6 +39,9 @@ struct HistoryView: View {
                                             .foregroundColor(.blue)
                                         Spacer()
                                     }
+                                    Text(session.date.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
                                 }
                                 .padding(.vertical, 8)
                             }
@@ -130,7 +132,5 @@ struct HistoryDetailView: View {
     }
 }
 #Preview {
-    let vm = HistoryViewModel()
-    vm.sessions = [AIFeedback.mock]
-    HistoryView(viewModel: vm)
+    HistoryView()
 }
