@@ -8,7 +8,13 @@
 import SwiftUI
 
 struct RootView: View {
+    @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
+
     @StateObject private var onboardingViewModel = OnboardingViewModel()
+
+    private var preferredColorScheme: ColorScheme? {
+        AppearancePreference(rawValue: appearancePreferenceRaw)?.resolvedColorScheme
+    }
 
     var body: some View {
         Group {
@@ -19,6 +25,7 @@ struct RootView: View {
                 OnboardingFlowView(viewModel: onboardingViewModel)
             }
         }
+        .preferredColorScheme(preferredColorScheme)
     }
 }
 
