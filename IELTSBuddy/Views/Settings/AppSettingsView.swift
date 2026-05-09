@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct AppSettingsView: View {
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
@@ -31,6 +32,16 @@ struct AppSettingsView: View {
                     } label: {
                         Label("Review mistakes", systemImage: "list.bullet")
                     }
+                }
+
+                Section {
+                    Button {
+                        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                        UIApplication.shared.open(url)
+                    } label: {
+                        Label("Open System Settings", systemImage: "arrow.up.forward.square")
+                    }
+                    .buttonStyle(.borderless)
                 }
 
                 Section("About") {
