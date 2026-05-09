@@ -19,7 +19,8 @@ final class OnboardingViewModel: ObservableObject {
     @Published var name: String = ""
     @Published var selectedLevel: ProficiencyLevel = .intermediate
     @Published var selectedTarget: TargetScore = .sixZero
-    /// When `nil`, `UserProfile.make` uses `targetScore.suggestedDailyGoal`.
+    
+    // When nil, UserProfile.make uses targetScore.suggestedDailyGoal.
     @Published var dailyGoalOverride: Int?
 
     @Published private(set) var savedProfile: UserProfile?
