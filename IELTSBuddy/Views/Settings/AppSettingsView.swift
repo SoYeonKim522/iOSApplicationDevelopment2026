@@ -44,8 +44,12 @@ struct AppSettingsView: View {
                     .buttonStyle(.borderless)
                 }
 
-                Section("About") {
+                Section {
                     LabeledContent("Version", value: appVersion)
+                } header: {
+                    Text("About")
+                } footer: {
+                    Text("Your data stays only on this device.")
                 }
             }
             .navigationTitle("Settings")
