@@ -7,7 +7,7 @@
 import Foundation
 
 struct UserProfile: Codable, Equatable, Identifiable {
-    static let maxNameLength = 30
+    nonisolated static let maxNameLength = 30
 
     let id: UUID
     let name: String
@@ -18,7 +18,7 @@ struct UserProfile: Codable, Equatable, Identifiable {
 
     // Validating
     // from raw, untrusted input.
-    static func make(
+    nonisolated static func make(
         name rawName: String,
         targetScore: TargetScore,
         currentLevel: ProficiencyLevel,
@@ -70,7 +70,7 @@ struct UserProfile: Codable, Equatable, Identifiable {
         )
     }
 
-    private static func isAllowedNameCharacter(_ ch: Character) -> Bool {
+    private nonisolated static func isAllowedNameCharacter(_ ch: Character) -> Bool {
         ch.isLetter || ch.isWhitespace || ch == "-" || ch == "'"
     }
 }
