@@ -10,6 +10,10 @@ import SwiftUI
 struct AppSettingsView: View {
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
 
+    private var appVersion: String {
+        (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? "—"
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -21,10 +25,16 @@ struct AppSettingsView: View {
                     }
                 }
 
-                NavigationLink {
-                    ReviewLogView()
-                } label: {
-                    Label("Review mistakes", systemImage: "list.bullet")
+                Section {
+                    NavigationLink {
+                        ReviewLogView()
+                    } label: {
+                        Label("Review mistakes", systemImage: "list.bullet")
+                    }
+                }
+
+                Section("About") {
+                    LabeledContent("Version", value: appVersion)
                 }
             }
             .navigationTitle("Settings")
