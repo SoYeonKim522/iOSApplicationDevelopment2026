@@ -4,6 +4,7 @@ Secrets.plist
 # Xcode
 build/
 DerivedData/
+.derivedData/
 *.xcuserstate
 xcuserdata/
 *.xcworkspace/xcuserdata/
