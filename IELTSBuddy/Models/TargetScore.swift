@@ -31,7 +31,7 @@ enum TargetScore: Double, CaseIterable, Codable, Identifiable, Hashable {
 
     // Suggested daily practice count to realistically reach this band.
     // Pure data so it can be tweaked without touching UI code.
-    var suggestedDailyGoal: Int {
+    nonisolated var suggestedDailyGoal: Int {
         switch self {
         case .fiveZero, .fiveFive: return 2
         case .sixZero, .sixFive: return 3
