@@ -21,6 +21,8 @@ final class SpeechRecognitionManager: ObservableObject {
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var audioTapInstalled = false
+    /// True while audio has ended and we wait for the recognition task to finish (final result or benign completion).
+    private var isAwaitingRecognitionFinish = false
     private let speechRecognizer: SFSpeechRecognizer?
 
     init(locale: Locale = Locale(identifier: Locale.current.identifier)) {
@@ -88,26 +90,25 @@ final class SpeechRecognitionManager: ObservableObject {
     }
 
     func stopRecording() {
-        // stop mic input
-        if audioTapInstalled {
-            audioEngine.inputNode.removeTap(onBus: 0)
-            audioTapInstalled = false
+        guard isRecording || audioEngine.isRunning || audioTapInstalled else {
+            return
         }
+
+        isAwaitingRecognitionFinish = true
 
         if audioEngine.isRunning {
             audioEngine.stop()
         }
 
-        // end audio
-        recognitionRequest?.endAudio()
-        recognitionTask?.cancel()
-        recognitionTask = nil
-        recognitionRequest = nil
+        if audioTapInstalled {
+            audioEngine.inputNode.removeTap(onBus: 0)
+            audioTapInstalled = false
+        }
 
-        // close file handle to flush to disk
+        recognitionRequest?.endAudio()
+
         audioFile = nil
 
-        // deactivate audio session
         let audioSession = AVAudioSession.sharedInstance()
         try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
 
@@ -115,6 +116,7 @@ final class SpeechRecognitionManager: ObservableObject {
     }
 
     private func cleanupAfterFailure() {
+        isAwaitingRecognitionFinish = false
         recognitionTask?.cancel()
         recognitionTask = nil
         recognitionRequest = nil
@@ -130,13 +132,41 @@ final class SpeechRecognitionManager: ObservableObject {
         isRecording = false
     }
 
+    /// Tear down any in-flight session before starting a new recording (cancels recognition).
+    private func resetSessionForNewRecording() {
+        isAwaitingRecognitionFinish = false
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        recognitionRequest = nil
+
+        if audioTapInstalled {
+            audioEngine.inputNode.removeTap(onBus: 0)
+            audioTapInstalled = false
+        }
+        if audioEngine.isRunning {
+            audioEngine.stop()
+        }
+        audioFile = nil
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        isRecording = false
+    }
+
+    private func finalizeRecognitionAfterStop() {
+        recognitionTask = nil
+        recognitionRequest = nil
+        isAwaitingRecognitionFinish = false
+    }
+
     private func startRecognitionSession(using speechRecognizer: SFSpeechRecognizer) throws {
-        stopRecording()
+        resetSessionForNewRecording()
 
         transcript = ""
 
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+        try audioSession.setCategory(
+            .record,
+            mode: .measurement
+        )
         try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
 
         let recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
@@ -179,24 +209,50 @@ final class SpeechRecognitionManager: ObservableObject {
 
                 if let result {
                     self.transcript = result.bestTranscription.formattedString
+                    if result.isFinal {
+                        self.finalizeRecognitionAfterStop()
+                    }
                 }
 
                 if let error {
-                    if self.shouldReportRecognitionError(error) {
+                    let benignWhileStopping = self.isAwaitingRecognitionFinish && self.isBenignRecognitionEndError(error)
+
+                    if !benignWhileStopping, self.shouldReportRecognitionError(error) {
                         self.errorMessage = error.localizedDescription
                     }
-                    if self.isRecording {
-                        self.stopRecording()
+
+                    if benignWhileStopping {
+                        self.finalizeRecognitionAfterStop()
+                    } else if self.isRecording {
+                        self.cleanupAfterFailure()
+                    } else if self.isAwaitingRecognitionFinish {
+                        self.finalizeRecognitionAfterStop()
                     }
                 }
             }
         }
     }
 
+    private func isBenignRecognitionEndError(_ error: Error) -> Bool {
+        let ns = error as NSError
+        if ns.domain == "kAFAssistantErrorDomain", ns.code == 216 {
+            return true
+        }
+        let description = error.localizedDescription.lowercased()
+        if description.contains("canceled") || description.contains("cancelled") {
+            return true
+        }
+        return false
+    }
+
     private func shouldReportRecognitionError(_ error: Error) -> Bool {
         let ns = error as NSError
         // Canceled when the recognition task ends (e.g. user stopped recording).
         if ns.domain == "kAFAssistantErrorDomain", ns.code == 216 {
+            return false
+        }
+        let description = error.localizedDescription.lowercased()
+        if description.contains("canceled") || description.contains("cancelled") {
             return false
         }
         return true

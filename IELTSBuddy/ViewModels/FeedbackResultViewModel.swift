@@ -22,7 +22,7 @@ final class FeedbackResultViewModel: NSObject, ObservableObject, AVAudioPlayerDe
     @Published private(set) var isPlaying = false
     @Published var savedLogIDs: Set<UUID> = []
 
-    private let aiFeedbackService: AIFeedbackService
+    private let aiFeedbackService: any AIFeedbackProviding
     private let historyViewModel: HistoryViewModel
     private var audioPlayer: AVAudioPlayer?
 
@@ -30,13 +30,19 @@ final class FeedbackResultViewModel: NSObject, ObservableObject, AVAudioPlayerDe
         questionText: String,
         transcript: String,
         audioFileURL: URL?,
-        aiFeedbackService: AIFeedbackService? = nil,
+        aiFeedbackService: (any AIFeedbackProviding)? = nil,
         historyViewModel: HistoryViewModel? = nil
     ) {
         self.questionText = questionText
         self.transcript = transcript
         self.audioFileURL = audioFileURL
-        self.aiFeedbackService = aiFeedbackService ?? AIFeedbackService()
+        
+        if AppConfig.useMockAPI {
+                self.aiFeedbackService = MockAIFeedbackService()
+            } else {
+                self.aiFeedbackService = aiFeedbackService ?? AIFeedbackService()
+            }
+        
         self.historyViewModel = historyViewModel ?? HistoryViewModel()
     }
 
