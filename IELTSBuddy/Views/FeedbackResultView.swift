@@ -11,7 +11,10 @@ struct FeedbackResultView: View {
     let questionText: String
     let transcript: String
     let audioFileURL: URL?
-
+    let onExitToRoot: () -> Void //'x' button
+    
+    @Environment(\.dismiss) private var dismiss
+    
     @State private var audioPlayer: AVAudioPlayer?
     @State private var isPlaying = false
     @State private var playbackMonitor: Timer?
@@ -22,12 +25,14 @@ struct FeedbackResultView: View {
         init(
             questionText: String,
             transcript: String,
-            audioFileURL: URL?
+            audioFileURL: URL?,
+            onExitToRoot: @escaping () -> Void
         ) {
             self.questionText = questionText
             self.transcript = transcript
             self.audioFileURL = audioFileURL
-
+            self.onExitToRoot = onExitToRoot
+            
             _viewModel = StateObject(
                 wrappedValue: FeedbackResultViewModel(
                     questionText: questionText,
@@ -38,51 +43,52 @@ struct FeedbackResultView: View {
         }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if viewModel.isLoading {
-                Spacer()
-                ProgressView("Analyzing your answer...")
-                    .frame(maxWidth: .infinity, alignment: .center)
-                Spacer()
-            } else if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .foregroundStyle(.red)
-            } else if let feedbackResult = viewModel.feedbackResult {
-                HStack {
-                    Text("Transcript")
-                        .font(.headline)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if viewModel.isLoading {
                     Spacer()
-                    Button {
-                        viewModel.togglePlayback()
-                    } label: {
-                        Image(systemName: viewModel.isPlaying ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
-                            .font(.system(size: 30))
-                            .foregroundColor(audioFileURL == nil ? .secondary : .accentColor)
-                            .padding(16)
-                            .contentShape(Rectangle())
+                    ProgressView("Analyzing your answer...")
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    Spacer()
+                } else if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                        .foregroundStyle(.red)
+                } else if let feedbackResult = viewModel.feedbackResult {
+                    HStack {
+                        Text("Transcript")
+                            .font(.headline)
+                        Spacer()
+                        Button {
+                            viewModel.togglePlayback()
+                        } label: {
+                            Image(systemName: viewModel.isPlaying ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
+                                .font(.system(size: 30))
+                                .foregroundColor(audioFileURL == nil ? .secondary : .accentColor)
+                                .padding(16)
+                                .contentShape(Rectangle())
+                        }
+                        .disabled(audioFileURL == nil)
+                        .accessibilityLabel(isPlaying ? "Stop playback" : "Play recording")
                     }
-                    .disabled(audioFileURL == nil)
-                    .accessibilityLabel(isPlaying ? "Stop playback" : "Play recording")
-                }
-                ScrollView {
-                    Text(transcript)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(maxHeight: 140)
-
-                Text("Scores")
-                    .font(.headline)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(String(format: "Overall: %.1f", feedbackResult.overallScore))
-                    Text(String(format: "Fluency: %.1f", feedbackResult.fluencyScore))
-                    Text(String(format: "Vocabulary: %.1f", feedbackResult.vocabularyScore))
-                    Text(String(format: "Grammar: %.1f", feedbackResult.grammarScore))
-                    Text(String(format: "Pronunciation: %.1f", feedbackResult.pronunciationScore))
-                }
-
-                Text("Key Corrections")
-                    .font(.headline)
-                ScrollView {
+                    ScrollView {
+                        Text(transcript)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.vertical, 4)
+                    }
+                    
+                    Text("Scores")
+                        .font(.headline)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(String(format: "Overall: %.1f", feedbackResult.overallScore))
+                        Text(String(format: "Fluency: %.1f", feedbackResult.fluencyScore))
+                        Text(String(format: "Vocabulary: %.1f", feedbackResult.vocabularyScore))
+                        Text(String(format: "Grammar: %.1f", feedbackResult.grammarScore))
+                        Text(String(format: "Pronunciation: %.1f", feedbackResult.pronunciationScore))
+                    }
+                    
+                    Text("Key Corrections")
+                        .font(.headline)
                     VStack(alignment: .leading, spacing: 10) {
                         ForEach(feedbackResult.reviewLogs) { log in
                             VStack(alignment: .leading, spacing: 12) {
@@ -111,21 +117,21 @@ struct FeedbackResultView: View {
                                     .buttonStyle(.plain)
                                     .accessibilityLabel(viewModel.savedLogIDs.contains(log.id) ? "Saved mistake" : "Save mistake")
                                 }
-
+                                
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Original")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                     Text(log.original)
                                 }
-
+                                
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Corrected")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                     Text(log.corrected)
                                 }
-
+                                
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Explanation")
                                         .font(.caption)
@@ -141,11 +147,23 @@ struct FeedbackResultView: View {
                             .shadow(color: .black.opacity(0.07), radius: 6, x: 0, y: 2)
                         }
                     }
+                    
+                }
+            }
+            .padding()
+            .navigationTitle("Feedback")
+            .navigationBarBackButtonHidden(true)
+            .toolbar(.hidden, for: .tabBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        onExitToRoot()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
                 }
             }
         }
-        .padding()
-        .navigationTitle("Feedback")
         .task {
             await viewModel.loadFeedback()
         }
@@ -181,9 +199,7 @@ struct FeedbackResultView: View {
                 HStack(spacing: 12) {
 
                     Button {
-                        Task {
-                            await viewModel.loadFeedback()
-                        }
+                        dismiss()
                     } label: {
                         Text("Retry")
                             .frame(maxWidth: .infinity)
@@ -214,6 +230,7 @@ struct FeedbackResultView: View {
     FeedbackResultView(
         questionText: "Describe your hometown.",
         transcript: "My hometown is very beautiful.",
-        audioFileURL: nil
+        audioFileURL: nil,
+        onExitToRoot: {}
     )
 }

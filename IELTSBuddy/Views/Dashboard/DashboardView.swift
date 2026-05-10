@@ -10,12 +10,13 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @StateObject private var dashboardViewModel = DashboardViewModel()
-
+    @State private var path = NavigationPath()
+    
     /// Switch main `TabView` to Practice (tag 1).
     var goToPractice: () -> Void = {}
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(spacing: 24) {
                     if let profile = onboardingViewModel.savedProfile {
@@ -35,6 +36,23 @@ struct DashboardView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
+            }
+            .navigationDestination(for: Route.self) { route in
+                switch route {
+                case .recording:
+                    RecordingView(onNavigate: { route in
+                        path.append(route)
+                    })
+                case .feedback(let question, let transcript, let url):
+                    FeedbackResultView(
+                        questionText: question,
+                        transcript: transcript,
+                        audioFileURL: url,
+                        onExitToRoot: {
+                            path = NavigationPath()
+                        }
+                    )
+                }
             }
             .background(Color(.systemGroupedBackground).opacity(0.55))
             .navigationTitle("IELTS Buddy")
@@ -131,15 +149,15 @@ struct DashboardView: View {
     }
 
     private var startPracticeButton: some View {
-        NavigationLink {
-            RecordingView()
-        } label: {
-            Label("Start New Practice", systemImage: "mic.fill")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
+        Button {
+                path.append(Route.recording) 
+            } label: {
+                Label("Start New Practice", systemImage: "mic.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
     }
 
     private var upcomingQuestionsSection: some View {
