@@ -89,7 +89,9 @@ struct ReviewLogView: View {
             }
             .navigationTitle("Review Log")
             .onAppear {
-                viewModel.loadMistakes(from: [AIFeedback.mock])
+                let historyVM = HistoryViewModel()
+                historyVM.loadSessions()
+                viewModel.loadMistakes(from: historyVM.sessions)
             }
         }
     }
