@@ -16,7 +16,6 @@ final class RecordingViewModel: ObservableObject {
     @Published private(set) var questionGeneratorError: String?
     @Published private(set) var isGeneratingQuestion: Bool = false
     @Published private(set) var recordingTime: Int = 0
-    @Published var navigateToFeedback = false
     @Published private(set) var feedbackError: String?
     @Published private(set) var hasStartedRecordingAttempt = false
 
@@ -24,6 +23,8 @@ final class RecordingViewModel: ObservableObject {
     @Published private(set) var isRecording: Bool = false
     @Published private(set) var managerErrorMessage: String?
     @Published private(set) var audioFileURL: URL?
+    
+    var onNavigateToFeedback: (() -> Void)?
 
     var formattedRecordingTime: String {
         let minutes = recordingTime / 60
@@ -40,16 +41,22 @@ final class RecordingViewModel: ObservableObject {
     }
 
     private let manager: SpeechRecognitionManager
-    private let questionGenerator: QuestionGeneratorService
+    private let questionGenerator: any QuestionGenerating
     private var timer: Timer?
     private var cancellables = Set<AnyCancellable>()
 
     init(
         manager: SpeechRecognitionManager? = nil,
-        questionGenerator: QuestionGeneratorService? = nil
+        questionGenerator: (any QuestionGenerating)? = nil
     ) {
         self.manager = manager ?? SpeechRecognitionManager()
-        self.questionGenerator = questionGenerator ?? QuestionGeneratorService()
+
+        if AppConfig.useMockAPI {
+            self.questionGenerator = MockQuestionGeneratorService()
+        } else {
+            self.questionGenerator = questionGenerator ?? QuestionGeneratorService()
+        }
+
         bindManager()
     }
 
@@ -106,22 +113,21 @@ final class RecordingViewModel: ObservableObject {
             }
             .store(in: &cancellables)
     }
-
+    
     private func stopRecordingAndHandleNavigation() {
         let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
 
+        manager.stopRecording()
+        stopTimer()
+
         if trimmedTranscript.isEmpty {
-            manager.stopRecording()
-            stopTimer()
             recordingTime = 0
             feedbackError = "Please speak something before stopping."
-            navigateToFeedback = false
-        } else {
-            manager.stopRecording()
-            stopTimer()
-            feedbackError = nil
-            navigateToFeedback = true
+            return
         }
+
+        feedbackError = nil
+        onNavigateToFeedback?()
     }
 
     private func startTimer() {

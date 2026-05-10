@@ -113,7 +113,15 @@ extension AIFeedback {
             ReviewLog(
                 id: UUID(),
                 type: .grammar,
-                original: "My hometown is very beautiful",
+                original: "Mock) My hometown is very beautiful",
+                corrected: "My hometown is very beautiful.",
+                explanation: "Add a full stop at the end of the sentence.",
+                
+            ),
+            ReviewLog(
+                id: UUID(),
+                type: .vocabulary,
+                original: "Mock) My hometown is very beautiful",
                 corrected: "My hometown is very beautiful.",
                 explanation: "Add a full stop at the end of the sentence.",
                 
