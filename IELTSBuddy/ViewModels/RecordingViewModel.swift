@@ -58,7 +58,6 @@ final class RecordingViewModel: ObservableObject {
     }
 
     func generateQuestionTapped() async {
-        print("Generate tapped")
         isGeneratingQuestion = true
         defer { isGeneratingQuestion = false }
         questionGeneratorError = nil

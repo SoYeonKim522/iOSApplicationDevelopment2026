@@ -131,7 +131,9 @@ struct DashboardView: View {
     }
 
     private var startPracticeButton: some View {
-        Button(action: goToPractice) {
+        NavigationLink {
+            RecordingView()
+        } label: {
             Label("Start New Practice", systemImage: "mic.fill")
                 .font(.headline)
                 .frame(maxWidth: .infinity)

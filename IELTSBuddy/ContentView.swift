@@ -12,29 +12,23 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            DashboardView(goToPractice: { selectedTab = 1 })
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(0)
-
-            RecordingView()
-                .tabItem {
-                    Label("Practice", systemImage: "mic")
-                }
-                .tag(1)
+            DashboardView(goToPractice: { selectedTab = 0 })
+                    .tabItem {
+                        Label("Home", systemImage: "house.fill")
+                    }
+                    .tag(0)
 
             HistoryView()
                 .tabItem {
                     Label("History", systemImage: "play.rectangle.fill")
                 }
-                .tag(2)
+                .tag(1)
 
             AppSettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
-                .tag(3)
+                .tag(2)
         }
     }
 }
