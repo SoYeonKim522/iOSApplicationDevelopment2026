@@ -7,40 +7,55 @@ import AVFoundation
 import SwiftUI
 
 struct FeedbackResultView: View {
+    
     let questionText: String
     let transcript: String
     let audioFileURL: URL?
 
-    @State private var feedbackResult: AIFeedback?
-    @State private var isLoading = true
-    @State private var errorMessage: String?
     @State private var audioPlayer: AVAudioPlayer?
     @State private var isPlaying = false
     @State private var playbackMonitor: Timer?
     @State private var savedLogIDs: Set<UUID> = []
+    
+    @StateObject private var viewModel: FeedbackResultViewModel
 
-    private let aiFeedbackService = AIFeedbackService()
-    private let historyViewModel = HistoryViewModel()
+        init(
+            questionText: String,
+            transcript: String,
+            audioFileURL: URL?
+        ) {
+            self.questionText = questionText
+            self.transcript = transcript
+            self.audioFileURL = audioFileURL
+
+            _viewModel = StateObject(
+                wrappedValue: FeedbackResultViewModel(
+                    questionText: questionText,
+                    transcript: transcript,
+                    audioFileURL: audioFileURL
+                )
+            )
+        }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if isLoading {
+            if viewModel.isLoading {
                 Spacer()
                 ProgressView("Analyzing your answer...")
                     .frame(maxWidth: .infinity, alignment: .center)
                 Spacer()
-            } else if let errorMessage {
+            } else if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundStyle(.red)
-            } else if let feedbackResult {
+            } else if let feedbackResult = viewModel.feedbackResult {
                 HStack {
                     Text("Transcript")
                         .font(.headline)
                     Spacer()
                     Button {
-                        togglePlayback()
+                        viewModel.togglePlayback()
                     } label: {
-                        Image(systemName: isPlaying ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
+                        Image(systemName: viewModel.isPlaying ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
                             .font(.system(size: 30))
                             .foregroundColor(audioFileURL == nil ? .secondary : .accentColor)
                             .padding(16)
@@ -77,24 +92,24 @@ struct FeedbackResultView: View {
                                         .foregroundStyle(.secondary)
                                     Spacer()
                                     Button {
-                                        toggleSaved(log.id)
+                                        viewModel.toggleSaved(log.id)
                                     } label: {
                                         HStack(spacing: 6) {
-                                            Image(systemName: savedLogIDs.contains(log.id) ? "checkmark.circle.fill" : "plus.circle")
+                                            Image(systemName: viewModel.savedLogIDs.contains(log.id) ? "checkmark.circle.fill" : "plus.circle")
                                                 .font(.system(size: 18, weight: .semibold))
-                                            if savedLogIDs.contains(log.id) {
+                                            if viewModel.savedLogIDs.contains(log.id) {
                                                 Text("Saved")
                                                     .font(.caption)
                                                     .fontWeight(.semibold)
                                             }
                                         }
-                                        .foregroundStyle(savedLogIDs.contains(log.id) ? Color.green : Color.primary)
+                                        .foregroundStyle(viewModel.savedLogIDs.contains(log.id) ? Color.green : Color.primary)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 10)
                                         .contentShape(Rectangle())
                                     }
                                     .buttonStyle(.plain)
-                                    .accessibilityLabel(savedLogIDs.contains(log.id) ? "Saved mistake" : "Save mistake")
+                                    .accessibilityLabel(viewModel.savedLogIDs.contains(log.id) ? "Saved mistake" : "Save mistake")
                                 }
 
                                 VStack(alignment: .leading, spacing: 8) {
@@ -132,23 +147,21 @@ struct FeedbackResultView: View {
         .padding()
         .navigationTitle("Feedback")
         .task {
-            await loadFeedback()
+            await viewModel.loadFeedback()
         }
         .onDisappear {
-            stopPlaybackMonitoring()
-            audioPlayer?.stop()
-            isPlaying = false
+            viewModel.onDisappear()
         }
         .safeAreaInset(edge: .bottom) {
 
-            if isLoading {
+            if viewModel.isLoading {
                 EmptyView()
-            } else if errorMessage != nil {
+            } else if viewModel.errorMessage != nil {
 
                 // error -> Retry button only
                 Button {
                     Task {
-                        await loadFeedback()
+                        await viewModel.loadFeedback()
                     }
                 } label: {
                     Text("Retry")
@@ -162,14 +175,14 @@ struct FeedbackResultView: View {
                 .padding()
                 .background(.ultraThinMaterial)
 
-            } else if feedbackResult != nil {
+            } else if viewModel.feedbackResult != nil {
 
                 // success -> Retry + Next Question
                 HStack(spacing: 12) {
 
                     Button {
                         Task {
-                            await loadFeedback()
+                            await viewModel.loadFeedback()
                         }
                     } label: {
                         Text("Retry")
@@ -192,92 +205,6 @@ struct FeedbackResultView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
                 .padding()
-            }
-        }
-    }
-
-    @MainActor
-    private func loadFeedback() async {
-        // Preview case -> skip api call
-            if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-                self.feedbackResult = AIFeedback.mock
-                self.isLoading = false
-                return
-            }
-        // ends
-        
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            feedbackResult = try await aiFeedbackService.fetchFeedback(
-                question: questionText,
-                userAnswer: transcript
-            )
-            if let result = feedbackResult {
-                    historyViewModel.saveSession(result)
-                }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-
-        isLoading = false
-    }
-
-    private func togglePlayback() {
-        guard let audioFileURL else { return }
-
-        if isPlaying {
-            audioPlayer?.stop()
-            stopPlaybackMonitoring()
-            isPlaying = false
-            return
-        }
-
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default)
-            try session.setActive(true)
-
-            let player = try AVAudioPlayer(contentsOf: audioFileURL)
-            player.prepareToPlay()
-            player.play()
-            audioPlayer = player
-            isPlaying = true
-            startPlaybackMonitoring()
-        } catch {
-            stopPlaybackMonitoring()
-            isPlaying = false
-        }
-    }
-
-    private func startPlaybackMonitoring() {
-        stopPlaybackMonitoring()
-        playbackMonitor = Timer.scheduledTimer(withTimeInterval: 0.15, repeats: true) { _ in
-            guard let audioPlayer else {
-                stopPlaybackMonitoring()
-                isPlaying = false
-                return
-            }
-
-            if !audioPlayer.isPlaying {
-                stopPlaybackMonitoring()
-                isPlaying = false
-            }
-        }
-    }
-
-    private func stopPlaybackMonitoring() {
-        playbackMonitor?.invalidate()
-        playbackMonitor = nil
-    }
-
-    private func toggleSaved(_ id: UUID) {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            if savedLogIDs.contains(id) {
-                savedLogIDs.remove(id)
-            } else {
-                savedLogIDs.insert(id)
             }
         }
     }
