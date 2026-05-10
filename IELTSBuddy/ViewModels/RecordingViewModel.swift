@@ -40,16 +40,22 @@ final class RecordingViewModel: ObservableObject {
     }
 
     private let manager: SpeechRecognitionManager
-    private let questionGenerator: QuestionGeneratorService
+    private let questionGenerator: any QuestionGenerating
     private var timer: Timer?
     private var cancellables = Set<AnyCancellable>()
 
     init(
         manager: SpeechRecognitionManager? = nil,
-        questionGenerator: QuestionGeneratorService? = nil
+        questionGenerator: (any QuestionGenerating)? = nil
     ) {
         self.manager = manager ?? SpeechRecognitionManager()
-        self.questionGenerator = questionGenerator ?? QuestionGeneratorService()
+
+        if AppConfig.useMockAPI {
+            self.questionGenerator = MockQuestionGeneratorService()
+        } else {
+            self.questionGenerator = questionGenerator ?? QuestionGeneratorService()
+        }
+
         bindManager()
     }
 

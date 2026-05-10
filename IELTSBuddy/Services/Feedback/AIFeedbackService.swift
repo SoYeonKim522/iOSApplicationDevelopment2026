@@ -37,7 +37,7 @@ enum AIFeedbackServiceError: LocalizedError {
     }
 }
 
-final class AIFeedbackService {
+final class AIFeedbackService: AIFeedbackProviding {
     private static let endpointBase = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
     private let session: URLSession

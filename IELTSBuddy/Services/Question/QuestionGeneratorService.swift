@@ -37,7 +37,7 @@ enum QuestionGeneratorServiceError: LocalizedError {
     }
 }
 
-final class QuestionGeneratorService {
+final class QuestionGeneratorService: QuestionGenerating {
 
     private static let endpointBase = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
