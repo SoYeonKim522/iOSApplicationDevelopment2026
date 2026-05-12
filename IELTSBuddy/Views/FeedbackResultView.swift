@@ -171,7 +171,7 @@ struct FeedbackResultView: View {
         }
     }
 
-    private func analysisBlock(title: String, items: [String]) -> some View {
+    func analysisBlock(title: String, items: [String]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
@@ -187,7 +187,7 @@ struct FeedbackResultView: View {
             }
     }
 
-    private func mistakeSubCard(_ log: ReviewLog) -> some View {
+    func mistakeSubCard(_ log: ReviewLog) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 Text(log.type.rawValue.capitalized)
@@ -300,7 +300,7 @@ struct FeedbackResultView: View {
 
 
 
-private struct PillarScoreCell: View {
+ struct PillarScoreCell: View {
     let title: String
     let score: Double
 

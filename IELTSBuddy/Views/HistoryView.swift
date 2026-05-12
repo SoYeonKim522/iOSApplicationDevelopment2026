@@ -63,74 +63,129 @@ struct HistoryDetailView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 24) {
                 
                 // question
                 Text(session.questionText)
                     .font(.headline)
-                    .padding()
+                    .padding(.top, 8)
                 
-                // scores
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Scores")
-                        .font(.title2)
-                        .bold()
-                    Text("Overall: \(session.overallScore, specifier: "%.1f")")
-                    Text("Fluency: \(session.fluencyScore, specifier: "%.1f")")
-                    Text("Vocabulary: \(session.vocabularyScore, specifier: "%.1f")")
-                    Text("Grammar: \(session.grammarScore, specifier: "%.1f")")
-                    Text("Pronunciation: \(session.pronunciationScore, specifier: "%.1f")")
-                }
-                .padding()
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                    Text(String(format: "%.1f", session.overallScore))
+                                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                                    Text("overall")
+                                        .font(.body)
+                                        .foregroundColor(.secondary)
+                                }
+                LazyVGrid(
+                                    columns: [
+                                        GridItem(.flexible(), spacing: 12),
+                                        GridItem(.flexible(), spacing: 12)
+                                    ],
+                                    spacing: 12
+                                ) {
+                                    PillarScoreCell(title: "Fluency", score: session.fluencyScore)
+                                    PillarScoreCell(title: "Vocabulary", score: session.vocabularyScore)
+                                    PillarScoreCell(title: "Grammar", score: session.grammarScore)
+                                    PillarScoreCell(title: "Pronunciation", score: session.pronunciationScore)
+                                }
                 
-                // feedback
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Feedback")
-                        .font(.title2)
-                        .bold()
-                    Text("Strengths: \(session.feedback.strengths)")
-                    Text("Weaknesses: \(session.feedback.weaknesses)")
-                    Text("Suggestion: \(session.feedback.ideaSuggestion)")
-                }
-                .padding()
-                
-                // mistakes
-                if !session.aiCorrections.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Key Corrections")
-                            .font(.title2)
-                            .bold()
-                            .padding(.horizontal)
-                        
-                        ForEach(session.aiCorrections) { log in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(log.type.rawValue.capitalized)
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                                Text("Original: \(log.original)")
-                                    .font(.subheadline)
-                                Text("Corrected: \(log.corrected)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.green)
-                                if !log.explanation.isEmpty {
-                                    Text(log.explanation)
-                                        .font(.caption)
-                                        .foregroundColor(.gray)
+                VStack(alignment: .leading, spacing: 16) {
+                                    Text("AI Analysis")
+                                        .font(.title3.weight(.semibold))
+                                    
+                                    VStack(alignment: .leading, spacing: 14) {
+                                        analysisBlock(title: "Idea Suggestion", items: session.feedback.ideaSuggestion)
+                                        analysisBlock(title: "Strengths", items: session.feedback.strengths)
+                                        analysisBlock(title: "Weaknesses", items: session.feedback.weaknesses)
+                                        
+                                        if !session.aiCorrections.isEmpty {
+                                            Text("Key Corrections")
+                                                .font(.headline.weight(.semibold))
+                                                .padding(.top, 12)
+                                            
+                                            VStack(alignment: .leading, spacing: 10) {
+                                                ForEach(session.aiCorrections) { log in
+                                                    mistakeSubCard(log)
+                                                }
+                                            }
+                                            .padding(.top, 4)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(18)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color(.secondarySystemGroupedBackground))
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                                    )
                                 }
                             }
                             .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
+                        }
+                        .navigationTitle("Session Detail")
+                        .navigationBarTitleDisplayMode(.inline)
+                    }
+                    
+                    private func analysisBlock(title: String, items: [String]) -> some View {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(items, id: \.self) { item in
+                                    Text("• \(item)")
+                                        .font(.body)
+                                        .foregroundStyle(.primary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
                         }
                     }
+                    
+                    private func mistakeSubCard(_ log: ReviewLog) -> some View {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(log.type.rawValue.capitalized)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Capsule().fill(Color.primary.opacity(0.06)))
+                            
+                            Text(log.original)
+                                .font(.subheadline)
+                                .foregroundStyle(Color.red.opacity(0.85))
+                                .fixedSize(horizontal: false, vertical: true)
+                            
+                            Text(log.corrected)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Color.green.opacity(0.9))
+                                .fixedSize(horizontal: false, vertical: true)
+                            
+                            if !log.explanation.isEmpty {
+                                Text(log.explanation)
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(.tertiarySystemGroupedBackground))
+                        )
+                    }
                 }
-            }
-        }
-        .navigationTitle("Session Detail")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
+
+                #Preview {
+                    NavigationStack {
+                        HistoryDetailView(session: AIFeedback.mock)
+                    }
+                }
 #Preview {
     HistoryView()
 }

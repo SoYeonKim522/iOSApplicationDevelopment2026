@@ -10,18 +10,27 @@ import Foundation
 struct BookmarkedMistake: Identifiable, Codable, Equatable, Hashable {
     let id: UUID
     // Free-form text copied from the feedback.
-    let mistake: String
+    let original: String
+    let corrected: String
+    let type: ErrorType
+    let explanation: String
     let dateAdded: Date
     let sessionId: UUID
 
     init(
         id: UUID = UUID(),
-        mistake: String,
+        original: String,
+        corrected: String,
+        type: ErrorType,
+        explanation: String,
         dateAdded: Date = Date(),
         sessionId: UUID
     ) {
         self.id = id
-        self.mistake = mistake.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.original = original
+        self.corrected = corrected
+        self.type = type
+        self.explanation = explanation
         self.dateAdded = dateAdded
         self.sessionId = sessionId
     }
