@@ -141,9 +141,9 @@ struct FeedbackResultView: View {
                 .font(.title3.weight(.semibold))
 
             VStack(alignment: .leading, spacing: 14) {
-                analysisBlock(title: "Idea Suggestion", body: comment.ideaSuggestion)
-                analysisBlock(title: "Strengths", body: comment.strengths)
-                analysisBlock(title: "Weaknesses", body: comment.weaknesses)
+                analysisBlock(title: "Idea Suggestion", items: comment.ideaSuggestion)
+                analysisBlock(title: "Strengths", items: comment.strengths)
+                analysisBlock(title: "Weaknesses", items: comment.weaknesses)
 
                 if !mistakeLists.isEmpty {
                     
@@ -171,16 +171,20 @@ struct FeedbackResultView: View {
         }
     }
 
-    private func analysisBlock(title: String, body: String) -> some View {
+    private func analysisBlock(title: String, items: [String]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Text(body)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(items, id: \.self) { item in
+                        Text("• \(item)")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
     }
 
     private func mistakeSubCard(_ log: ReviewLog) -> some View {

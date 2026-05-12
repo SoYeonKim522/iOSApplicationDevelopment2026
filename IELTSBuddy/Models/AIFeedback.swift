@@ -6,9 +6,9 @@
 import Foundation
 
 struct FeedbackComment: Codable, Equatable {
-    let strengths: String
-    let weaknesses: String
-    let ideaSuggestion: String
+    let strengths: [String]
+    let weaknesses: [String]
+    let ideaSuggestion: [String]
 }
 
 struct AIFeedback: Codable, Identifiable, Equatable {
@@ -105,9 +105,9 @@ extension AIFeedback {
         grammarScore: 7.0,
         pronunciationScore: 8.0,
         feedback: FeedbackComment(
-            strengths: "Clear basic description.",
-            weaknesses: "Lacks detail and complex structures.",
-            ideaSuggestion: "Add examples and sensory details."
+            strengths: ["Clear basic description."],
+            weaknesses: ["Lacks detail.", "No complex structures used."],
+            ideaSuggestion: ["Add examples.", "Include sensory details."]
         ),
         aiCorrections: [
             ReviewLog(
