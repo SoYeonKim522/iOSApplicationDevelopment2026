@@ -8,5 +8,5 @@
 import Foundation
 
 enum AppConfig {
-    static let useMockAPI = true
+    static let useMockAPI = false
 }
