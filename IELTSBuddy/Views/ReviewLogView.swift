@@ -228,7 +228,7 @@ struct ReviewLogView: View {
                            }
                        }
                        .padding()
-                       .background(Color.white)
+                       .background(Color(.secondarySystemGroupedBackground))
                        .cornerRadius(16)
                    }
                    
@@ -263,7 +263,7 @@ struct ReviewLogView: View {
                            .font(.subheadline)
                            .padding(.horizontal, 16)
                            .padding(.vertical, 8)
-                           .background(isSelected ? Color.blue : Color.white)
+                           .background(isSelected ? Color.accentColor : Color(.secondarySystemGroupedBackground))
                            .foregroundColor(isSelected ? .white : .primary)
                            .cornerRadius(20)
                            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
