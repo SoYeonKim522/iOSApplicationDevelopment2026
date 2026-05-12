@@ -60,7 +60,7 @@ struct HistoryView: View {
 
 struct HistoryDetailView: View {
     let session: AIFeedback
-    
+    @StateObject private var bookmarkViewModel = BookmarkViewModel()
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -106,7 +106,20 @@ struct HistoryDetailView: View {
                                             
                                             VStack(alignment: .leading, spacing: 10) {
                                                 ForEach(session.aiCorrections) { log in
-                                                    mistakeSubCard(log)
+                                                    MistakeCard(
+                                                        original: log.original,
+                                                        corrected: log.corrected,
+                                                        type: log.type,
+                                                        explanation: log.explanation,
+                                                        isBookmarked: bookmarkViewModel.isBookmarked(log.id),
+                                                        onBookmarkTap: {
+                                                            if bookmarkViewModel.isBookmarked(log.id) {
+                                                                bookmarkViewModel.removeBookmark(id: log.id)
+                                                            } else {
+                                                                bookmarkViewModel.addBookmark(from: log, sessionId: session.id)
+                                                            }
+                                                        }
+                                                    )
                                                 }
                                             }
                                             .padding(.top, 4)
@@ -128,6 +141,9 @@ struct HistoryDetailView: View {
                         }
                         .navigationTitle("Session Detail")
                         .navigationBarTitleDisplayMode(.inline)
+                        .onAppear {
+                            bookmarkViewModel.loadBookmarks()
+                        }
                     }
                     
                     private func analysisBlock(title: String, items: [String]) -> some View {

@@ -198,24 +198,24 @@ struct FeedbackResultView: View {
                     .background(Capsule().fill(Color.primary.opacity(0.06)))
                 Spacer()
                 Button {
-                    viewModel.toggleSaved(log.id)
+                    viewModel.toggleSaved(log, sessionId: viewModel.feedbackResult?.id ?? UUID())
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: viewModel.savedLogIDs.contains(log.id) ? "checkmark.circle.fill" : "plus.circle")
+                        Image(systemName: viewModel.isBookmarked(log.id) ? "checkmark.circle.fill" : "plus.circle")
                             .font(.system(size: 16, weight: .semibold))
-                        if viewModel.savedLogIDs.contains(log.id) {
+                        if viewModel.isBookmarked(log.id) {
                             Text("Saved")
                                 .font(.caption2)
                                 .fontWeight(.semibold)
                         }
                     }
-                    .foregroundStyle(viewModel.savedLogIDs.contains(log.id) ? Color.green : Color.primary)
+                    .foregroundStyle(viewModel.isBookmarked(log.id) ? Color.green : Color.primary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 8)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(viewModel.savedLogIDs.contains(log.id) ? "Saved mistake" : "Save mistake")
+                .accessibilityLabel(viewModel.isBookmarked(log.id) ? "Saved mistake" : "Save mistake")
             }
 
             Text(log.original)
