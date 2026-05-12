@@ -33,7 +33,7 @@ class ReviewLogViewModel: ObservableObject {
     
     // loads all mistakes across all sessions
     func loadMistakes(from sessions: [AIFeedback]) {
-        allMistakes = sessions.flatMap { $0.reviewLogs }
+        allMistakes = sessions.flatMap { $0.aiCorrections }
         applyFilter()
     }
     

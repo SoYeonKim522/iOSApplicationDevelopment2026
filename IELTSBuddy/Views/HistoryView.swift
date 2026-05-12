@@ -95,14 +95,14 @@ struct HistoryDetailView: View {
                 .padding()
                 
                 // mistakes
-                if !session.reviewLogs.isEmpty {
+                if !session.aiCorrections.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Key Corrections")
                             .font(.title2)
                             .bold()
                             .padding(.horizontal)
                         
-                        ForEach(session.reviewLogs) { log in
+                        ForEach(session.aiCorrections) { log in
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(log.type.rawValue.capitalized)
                                     .font(.caption)
