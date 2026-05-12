@@ -153,10 +153,10 @@ final class AIFeedbackService: AIFeedbackProviding {
         - "grammarScore": number
         - "pronunciationScore": number
         - "feedback": object with keys "strengths", "weaknesses", "ideaSuggestion" (all strings).
-        - "reviewLogs": array of objects, each with "original" (string), "corrected" (string), "type" (exactly one of: "grammar", "vocabulary", "pronunciation"), and "explanation" (string; may be empty).
+        - "aiCorrections": array of objects, each with "original" (string), "corrected" (string), "type" (exactly one of: "grammar", "vocabulary", "pronunciation"), and "explanation" (string; may be empty).
 
-        CRITICAL RULE FOR reviewLogs:
-            You MUST provide at least ONE item in the `reviewLogs` array. If the user's answer is perfect, provide a better, more native-sounding alternative expression and classify it as "vocabulary". NEVER return an empty array []
+        CRITICAL RULE FOR aiCorrections:
+            You MUST provide at least ONE item in the `aiCorrections` array. If the user's answer is perfect, provide a better, more native-sounding alternative expression and classify it as "vocabulary". NEVER return an empty array []
         
         Do not include an "id" field on the root object or on review log items (optional ids are accepted but omit them). Do not wrap the JSON in markdown.
         """

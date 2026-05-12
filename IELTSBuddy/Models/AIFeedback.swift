@@ -22,7 +22,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
     let grammarScore: Double
     let pronunciationScore: Double
     let feedback: FeedbackComment
-    let reviewLogs: [ReviewLog]
+    let aiCorrections: [ReviewLog]
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -35,7 +35,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
         case grammarScore
         case pronunciationScore
         case feedback
-        case reviewLogs
+        case aiCorrections
     }
 
     init(
@@ -49,7 +49,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
         grammarScore: Double,
         pronunciationScore: Double,
         feedback: FeedbackComment,
-        reviewLogs: [ReviewLog]
+        aiCorrections: [ReviewLog]
     ) {
         self.id = id
         self.date = date
@@ -61,7 +61,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
         self.grammarScore = grammarScore
         self.pronunciationScore = pronunciationScore
         self.feedback = feedback
-        self.reviewLogs = reviewLogs
+        self.aiCorrections = aiCorrections
     }
 
     init(from decoder: Decoder) throws {
@@ -76,7 +76,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
         grammarScore = try container.decode(Double.self, forKey: .grammarScore)
         pronunciationScore = try container.decode(Double.self, forKey: .pronunciationScore)
         feedback = try container.decode(FeedbackComment.self, forKey: .feedback)
-        reviewLogs = try container.decode([ReviewLog].self, forKey: .reviewLogs)
+        aiCorrections = try container.decode([ReviewLog].self, forKey: .aiCorrections)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -90,7 +90,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
         try container.encode(grammarScore, forKey: .grammarScore)
         try container.encode(pronunciationScore, forKey: .pronunciationScore)
         try container.encode(feedback, forKey: .feedback)
-        try container.encode(reviewLogs, forKey: .reviewLogs)
+        try container.encode(aiCorrections, forKey: .aiCorrections)
     }
 }
 
@@ -109,7 +109,7 @@ extension AIFeedback {
             weaknesses: "Lacks detail and complex structures.",
             ideaSuggestion: "Add examples and sensory details."
         ),
-        reviewLogs: [
+        aiCorrections: [
             ReviewLog(
                 id: UUID(),
                 type: .grammar,
