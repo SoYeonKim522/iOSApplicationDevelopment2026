@@ -20,15 +20,20 @@ struct ContentView: View {
 
             HistoryView()
                 .tabItem {
-                    Label("History", systemImage: "play.rectangle.fill")
+                    Label("History", systemImage: "clock.arrow.circlepath")
                 }
                 .tag(1)
 
+            ReviewLogView()
+                            .tabItem {
+                                Label("Review", systemImage: "text.magnifyingglass")
+                            }
+                            .tag(2)
             AppSettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
                 }
-                .tag(2)
+                .tag(3)
         }
     }
 }

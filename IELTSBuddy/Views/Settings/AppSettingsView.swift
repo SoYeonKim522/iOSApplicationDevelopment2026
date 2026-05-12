@@ -30,7 +30,7 @@ struct AppSettingsView: View {
                     NavigationLink {
                         ReviewLogView()
                     } label: {
-                        Label("Review mistakes", systemImage: "list.bullet")
+                        Label("Review mistakes", systemImage: "text.magnifyingglass")
                     }
                 }
 
