@@ -136,23 +136,57 @@ final class QuestionGeneratorService: QuestionGenerating {
         components?.queryItems = [URLQueryItem(name: "key", value: apiKey)]
         return components?.url
     }
+    
+    private static func buildSystemInstruction(
+        topic: String,
+        part: String,
+        topicCategoryAllowlist: String
+    ) -> String {
+        let partGuidelines = partGuidelines(for: part, topic: topic)
+        let duration = estimatedDuration(for: part)
 
-    private static func buildSystemInstruction(topic: String, part: String, topicCategoryAllowlist: String) -> String {
-        """
-        You are an expert IELTS examiner. Generate ONE realistic IELTS Speaking question for \(part) about the topic '\(topic)'.
-        You MUST return strictly valid JSON matching our PracticeQuestion Codable shape (no markdown, no extra text):
+        return """
+        IELTS examiner. Generate ONE \(part) question about '\(topic)'. Output valid JSON only, no markdown.
 
-        Keys (camelCase only):
-        - "id": optional UUID string (omit if you prefer — the client assigns one).
-        - "text": the single examiner question sentence.
-        - "part": must be exactly "part1", "part2", or "part3" (prefer \(part) as requested).
-        - "topicCategory": must be exactly one literal from this allowlist — \(topicCategoryAllowlist).
-          Prefer "\(topic)" when it fits the learner's topic selector; otherwise pick the closest semantic match from the allowlist.
-        - "estimatedDuration": integer seconds suggesting how long an answer might reasonably take for that part.
+        Schema: {"text":"...","part":"\(part)","topicCategory":"<from allowlist>","estimatedDuration":\(duration)}
 
-        Honour IELTS part styles: Part 1 short personalised questions; Part 2 a clear long-turn / cue-card style stem; Part 3 more analytical follow-up prompts.
+        topicCategory allowlist: \(topicCategoryAllowlist). Use "\(topic)" if it fits, else closest match.
+
+        \(part) format: \(partGuidelines)
         """
     }
+    
+    private static func partGuidelines(for part: String, topic: String) -> String {
+        switch part {
+        case "part1":
+            return """
+            One sentence only
+            Style: "Do you enjoy...?", "How often do you...?". .
+            """
+        case "part2":
+            return """
+            A cue card using EXACTLY this structure (preserve the newlines):
+            "Describe [subject related to '\(topic)'].\\n\\nYou should say:\\n• [point 1]\\n• [point 2]\\n• [point 3]\\n\\nAnd explain [reflective prompt]."
+            """
+        case "part3":
+            return """
+            An analytical question linked to '\(topic)'. \
+            Style: "Why do you think...?", "How has ... changed?". One sentence only.
+            """
+        default:
+            return "A standard IELTS speaking question. One sentence only."
+        }
+    }
+
+    private static func estimatedDuration(for part: String) -> Int {
+        switch part {
+        case "part1": return 25
+        case "part2": return 120
+        case "part3": return 45
+        default: return 30
+        }
+    }
+    
 
     private static func extractGeminiErrorMessage(from data: Data) -> String? {
         struct Envelope: Decodable {
