@@ -2,30 +2,11 @@
 //  DashboardViewModel.swift
 //  IELTSBuddy
 //
-//  Dashboard: session stats, upcoming question chips, optional Gemini fetch.
+//  Dashboard: session stats, recommended topic chips, optional Gemini fetch.
 //
 
 import Combine
 import Foundation
-import SwiftUI
-
-struct UpcomingQuestionItem: Identifiable, Equatable {
-    let id: UUID
-    let topicCategory: TopicCategory
-    let part: PartType
-
-    var topicTitle: String {
-        topicCategory.displayTitleForRecommendation
-    }
-
-    var partLabel: String {
-        part.shortLabelForRecommendation
-    }
-
-    var emoji: String {
-        topicCategory.recommendationEmoji
-    }
-}
 
 final class DashboardViewModel: ObservableObject {
 
@@ -34,7 +15,7 @@ final class DashboardViewModel: ObservableObject {
     @Published private(set) var sessionCount: Int = 0
     @Published private(set) var practicesToday: Int = 0
     @Published private(set) var weeklyPracticeCount: Int = 0
-    @Published var upcomingItems: [UpcomingQuestionItem] = []
+    @Published var recommendedTopicItems: [RecommendedTopicItem] = []
 
     @Published var selectedTopic: TopicCategory = .work
     @Published var selectedPart: PartType = .part1
@@ -47,7 +28,7 @@ final class DashboardViewModel: ObservableObject {
     init(questionGenerator: QuestionGeneratorService = QuestionGeneratorService()) {
         self.questionGenerator = questionGenerator
         refreshStats()
-        refreshUpcomingQuestions()
+        refreshRecommendedTopics()
     }
 
     // Reloads counts from the same store as HistoryViewModel.
@@ -78,10 +59,10 @@ final class DashboardViewModel: ObservableObject {
         }
     }
 
-    func refreshUpcomingQuestions() {
+    func refreshRecommendedTopics() {
         let picks = TopicCategory.allCases.shuffled().prefix(3)
-        upcomingItems = picks.map { topic in
-            UpcomingQuestionItem(id: UUID(), topicCategory: topic, part: .part1)
+        recommendedTopicItems = picks.map { topic in
+            RecommendedTopicItem(id: UUID(), topicCategory: topic, part: .part1)
         }
     }
 

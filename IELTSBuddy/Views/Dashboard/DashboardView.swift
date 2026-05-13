@@ -2,7 +2,7 @@
 //  DashboardView.swift
 //  IELTSBuddy
 //
-//  Home hub layout aligned with design: greeting, daily ring, stats, CTA, upcoming row.
+//  Home hub layout: greeting, daily goal card, stats, practice CTA, recommended topics row.
 //
 
 import SwiftUI
@@ -25,7 +25,7 @@ struct DashboardView: View {
                         dailyGoalCard(profile: profile)
                         statsRow
                         startPracticeButton
-                        weeklyRecommendedTopicsSection
+                        recommendedTopicsSection
                     } else {
                         ContentUnavailableView(
                             "No profile yet",
@@ -180,21 +180,21 @@ struct DashboardView: View {
             .controlSize(.large)
     }
 
-    private var weeklyRecommendedTopicsSection: some View {
+    private var recommendedTopicsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Weekly hot topics")
+                Text("Recommended topics")
                     .font(.headline)
                 Spacer()
                 Button("Refresh") {
-                    dashboardViewModel.refreshUpcomingQuestions()
+                    dashboardViewModel.refreshRecommendedTopics()
                 }
                 .font(.caption.weight(.semibold))
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(dashboardViewModel.upcomingItems) { item in
+                    ForEach(dashboardViewModel.recommendedTopicItems) { item in
                         Button {
                             recordingViewModel.preparePracticeEntry(
                                 topic: item.topicCategory,
@@ -231,57 +231,6 @@ struct DashboardView: View {
             return String(first)
         }
         return t
-    }
-}
-
-// MARK: - Pieces
-
-private struct DailyGoalRing: View {
-    let progress: CGFloat
-    let done: Int
-    let goal: Int
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.secondary.opacity(0.22), lineWidth: 12)
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            VStack(spacing: 4) {
-                Text("\(done) / \(goal)")
-                    .font(.title2.bold())
-                Text("Today")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(width: 128, height: 128)
-        .accessibilityLabel("Daily goal \(done) of \(goal)")
-    }
-}
-
-private struct RecommendedTopicCard: View {
-    let item: UpcomingQuestionItem
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(item.emoji)
-                .font(.title)
-            Text(item.topicTitle)
-                .font(.subheadline.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-            Text(item.partLabel)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(width: 148, alignment: .leading)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
     }
 }
 
