@@ -73,7 +73,7 @@ struct DashboardView: View {
     private func greetingBlock(profile: UserProfile) -> some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("\(timeGreeting()), \(nameMonogram(profile.name))!")
+                Text("\(timeGreeting()), \(greetingName(profile.name))!")
                     .font(.title2.bold())
                 Text("Target: \(profile.targetScore.displayName)")
                     .font(.subheadline)
@@ -198,10 +198,15 @@ struct DashboardView: View {
         }
     }
 
-    private func nameMonogram(_ name: String) -> String {
-        let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let c = t.first else { return "there" }
-        return String(c).uppercased()
+    // First word of the stored name for a natural headline ("David Lee" will be "David"; empty will be "there")
+    private func greetingName(_ fullName: String) -> String {
+        let t = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return "there" }
+        let parts = t.split(separator: " ", omittingEmptySubsequences: true)
+        if let first = parts.first {
+            return String(first)
+        }
+        return t
     }
 }
 
