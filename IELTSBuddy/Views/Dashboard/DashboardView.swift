@@ -10,6 +10,7 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @StateObject private var dashboardViewModel = DashboardViewModel()
+    @StateObject private var recordingViewModel = RecordingViewModel()
     @State private var path = NavigationPath()
     
     /// Switch main `TabView` to Practice (tag 1).
@@ -40,9 +41,10 @@ struct DashboardView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .recording:
-                    RecordingView(onNavigate: { route in
-                        path.append(route)
-                    })
+                    RecordingView(
+                            viewModel: recordingViewModel,
+                            onNavigate: { route in path.append(route) }
+                        )
                 case .feedback(let question, let transcript, let url):
                     FeedbackResultView(
                         questionText: question,
@@ -50,6 +52,10 @@ struct DashboardView: View {
                         audioFileURL: url,
                         onExitToRoot: {
                             path = NavigationPath()
+                        },
+                        onNextQuestion: {
+                            recordingViewModel.resetForNextQuestion()
+                            path.removeLast()
                         }
                     )
                 }

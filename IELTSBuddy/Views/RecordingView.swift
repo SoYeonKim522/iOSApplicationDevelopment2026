@@ -7,9 +7,9 @@ import SwiftUI
 import UIKit
 
 struct RecordingView: View {
-    @StateObject private var viewModel = RecordingViewModel()
+    @ObservedObject var viewModel: RecordingViewModel
     var onNavigate: (Route) -> Void
-
+    
     var body: some View {
         VStack(spacing: 16) {
             ScrollView {
@@ -185,6 +185,9 @@ private extension View {
 
 #Preview {
     NavigationStack {
-        RecordingView(onNavigate: { _ in })
+        RecordingView(
+            viewModel: RecordingViewModel(),
+            onNavigate: { _ in }
+        )
     }
 }

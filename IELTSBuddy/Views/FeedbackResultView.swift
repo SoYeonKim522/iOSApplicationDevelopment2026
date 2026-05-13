@@ -11,6 +11,7 @@ struct FeedbackResultView: View {
     let transcript: String
     let audioFileURL: URL?
     let onExitToRoot: () -> Void //'x' button
+    let onNextQuestion: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -20,12 +21,14 @@ struct FeedbackResultView: View {
         questionText: String,
         transcript: String,
         audioFileURL: URL?,
-        onExitToRoot: @escaping () -> Void
+        onExitToRoot: @escaping () -> Void,
+        onNextQuestion: @escaping () -> Void
     ) {
         self.questionText = questionText
         self.transcript = transcript
         self.audioFileURL = audioFileURL
         self.onExitToRoot = onExitToRoot
+        self.onNextQuestion = onNextQuestion
 
         _viewModel = StateObject(
             wrappedValue: FeedbackResultViewModel(
@@ -278,6 +281,7 @@ struct FeedbackResultView: View {
                 )
 
                 Button {
+                    onNextQuestion()
                 } label: {
                     Text("Next Question")
                         .frame(maxWidth: .infinity)
@@ -350,7 +354,8 @@ struct FeedbackResultView: View {
             questionText: "Describe your hometown.",
             transcript: "My hometown is very beautiful.",
             audioFileURL: nil,
-            onExitToRoot: {}
+            onExitToRoot: {},
+            onNextQuestion: {}
         )
     }
 }

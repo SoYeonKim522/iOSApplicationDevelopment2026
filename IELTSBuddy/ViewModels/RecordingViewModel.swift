@@ -148,4 +148,13 @@ final class RecordingViewModel: ObservableObject {
         timer?.invalidate()
         timer = nil
     }
+    
+    func resetForNextQuestion() {
+        transcript = ""
+        audioFileURL = nil
+        hasStartedRecordingAttempt = false
+        feedbackError = nil
+        currentQuestion = nil
+        recordingTime = 0
+    }
 }
