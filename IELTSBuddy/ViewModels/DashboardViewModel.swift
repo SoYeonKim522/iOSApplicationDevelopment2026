@@ -2,7 +2,7 @@
 //  DashboardViewModel.swift
 //  IELTSBuddy
 //
-//  Dashboard: session stats, recommended topic chips, optional Gemini fetch.
+//  Dashboard: session stats and recommended topic chips. Question loading lives in RecordingViewModel.
 //
 
 import Combine
@@ -17,16 +17,7 @@ final class DashboardViewModel: ObservableObject {
     @Published private(set) var weeklyPracticeCount: Int = 0
     @Published var recommendedTopicItems: [RecommendedTopicItem] = []
 
-    @Published var selectedTopic: TopicCategory = .work
-    @Published var selectedPart: PartType = .part1
-    @Published var currentQuestion: PracticeQuestion?
-    @Published var isLoadingQuestion: Bool = false
-    @Published var questionError: String?
-
-    private let questionGenerator: QuestionGeneratorService
-
-    init(questionGenerator: QuestionGeneratorService = QuestionGeneratorService()) {
-        self.questionGenerator = questionGenerator
+    init() {
         refreshStats()
         refreshRecommendedTopics()
     }
@@ -63,22 +54,6 @@ final class DashboardViewModel: ObservableObject {
         let picks = TopicCategory.allCases.shuffled().prefix(3)
         recommendedTopicItems = picks.map { topic in
             RecommendedTopicItem(id: UUID(), topicCategory: topic, part: .part1)
-        }
-    }
-
-    @MainActor
-    func loadQuestion() async {
-        isLoadingQuestion = true
-        questionError = nil
-        defer { isLoadingQuestion = false }
-
-        do {
-            currentQuestion = try await questionGenerator.generateQuestion(
-                topic: selectedTopic.rawValue,
-                part: selectedPart.rawValue
-            )
-        } catch {
-            questionError = error.localizedDescription
         }
     }
 }
