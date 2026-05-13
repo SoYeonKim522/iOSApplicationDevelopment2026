@@ -11,9 +11,20 @@ import SwiftUI
 
 struct UpcomingQuestionItem: Identifiable, Equatable {
     let id: UUID
-    let questionNumber: Int
-    let partLabel: String
-    let topicTitle: String
+    let topicCategory: TopicCategory
+    let part: PartType
+
+    var topicTitle: String {
+        topicCategory.displayTitleForRecommendation
+    }
+
+    var partLabel: String {
+        part.shortLabelForRecommendation
+    }
+
+    var emoji: String {
+        topicCategory.recommendationEmoji
+    }
 }
 
 final class DashboardViewModel: ObservableObject {
@@ -69,18 +80,9 @@ final class DashboardViewModel: ObservableObject {
 
     func refreshUpcomingQuestions() {
         let picks = TopicCategory.allCases.shuffled().prefix(3)
-        upcomingItems = picks.enumerated().map { index, topic in
-            UpcomingQuestionItem(
-                id: UUID(),
-                questionNumber: index + 1,
-                partLabel: "Part 1",
-                topicTitle: topicTitle(topic)
-            )
+        upcomingItems = picks.map { topic in
+            UpcomingQuestionItem(id: UUID(), topicCategory: topic, part: .part1)
         }
-    }
-
-    private func topicTitle(_ topic: TopicCategory) -> String {
-        topic.rawValue.replacingOccurrences(of: "_", with: " ").capitalized
     }
 
     @MainActor

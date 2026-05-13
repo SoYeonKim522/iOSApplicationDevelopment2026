@@ -13,7 +13,7 @@ struct DashboardView: View {
     @StateObject private var recordingViewModel = RecordingViewModel()
     @State private var path = NavigationPath()
     
-    /// Switch main `TabView` to Practice (tag 1).
+    // Switch main TabView to Practice (tag 1).
     var goToPractice: () -> Void = {}
 
     var body: some View {
@@ -25,7 +25,7 @@ struct DashboardView: View {
                         dailyGoalCard(profile: profile)
                         statsRow
                         startPracticeButton
-                        upcomingQuestionsSection
+                        weeklyRecommendedTopicsSection
                     } else {
                         ContentUnavailableView(
                             "No profile yet",
@@ -166,10 +166,10 @@ struct DashboardView: View {
             .controlSize(.large)
     }
 
-    private var upcomingQuestionsSection: some View {
+    private var weeklyRecommendedTopicsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Upcoming Questions")
+                Text("Weekly hot topics")
                     .font(.headline)
                 Spacer()
                 Button("Refresh") {
@@ -181,7 +181,17 @@ struct DashboardView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(dashboardViewModel.upcomingItems) { item in
-                        UpcomingQuestionCard(item: item)
+                        Button {
+                            recordingViewModel.preparePracticeEntry(
+                                topic: item.topicCategory,
+                                part: item.part
+                            )
+                            path.append(Route.recording)
+                        } label: {
+                            RecommendedTopicCard(item: item)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(item.topicTitle), \(item.partLabel)")
                     }
                 }
                 .padding(.vertical, 4)
@@ -238,19 +248,19 @@ private struct DailyGoalRing: View {
     }
 }
 
-private struct UpcomingQuestionCard: View {
+private struct RecommendedTopicCard: View {
     let item: UpcomingQuestionItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Q\(item.questionNumber)")
-                .font(.title2.bold())
-            Text(item.partLabel)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(item.emoji)
+                .font(.title)
             Text(item.topicTitle)
                 .font(.subheadline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
+            Text(item.partLabel)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .frame(width: 148, alignment: .leading)
         .padding(16)

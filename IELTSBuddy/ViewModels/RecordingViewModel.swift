@@ -64,6 +64,20 @@ final class RecordingViewModel: ObservableObject {
         await manager.requestPermissions()
     }
 
+    // Applies topic before navigating from Home shortcuts so pickers match the chosen card.
+    func preparePracticeEntry(topic: TopicCategory, part: PartType) {
+        selectedTopic = topic
+        selectedPart = part
+        questionGeneratorError = nil
+        currentQuestion = nil
+        feedbackError = nil
+        transcript = ""
+        audioFileURL = nil
+        hasStartedRecordingAttempt = false
+        recordingTime = 0
+        stopTimer()
+    }
+
     func generateQuestionTapped() async {
         isGeneratingQuestion = true
         defer { isGeneratingQuestion = false }
