@@ -40,26 +40,44 @@ struct FeedbackResultView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 30) {
-                if viewModel.isLoading {
+        Group {
+            if viewModel.isLoading {
+                VStack {
+                    Spacer()
                     ProgressView("Analyzing your answer...")
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 48)
-                } else if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else if let feedback = viewModel.feedbackResult {
-                    transcriptSection
-                        .padding(.top, -20)
-
-                    scoresSection(feedback)
-
-                    aiAnalysisSection(feedback)
+                    Spacer()
+                }
+                .padding()
+            } else if let errorMessage = viewModel.errorMessage {
+                VStack {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.orange)
+                        Text("Something went wrong")
+                            .font(.headline)
+                        Text(errorMessage)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    Spacer()
+                }
+                .padding()
+            } else if let feedback = viewModel.feedbackResult {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 30) {
+                        transcriptSection
+                            .padding(.top, -20)
+                        scoresSection(feedback)
+                        aiAnalysisSection(feedback)
+                    }
+                    .padding()
                 }
             }
-            .padding()
         }
         .navigationTitle("Feedback")
         .navigationBarBackButtonHidden(true)

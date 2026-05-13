@@ -86,9 +86,23 @@ struct RecordingView: View {
                         }
 
                         if let message = viewModel.questionGeneratorError {
-                            Text(message)
-                                .foregroundStyle(.red)
-                                .font(.footnote)
+                            HStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(.orange)
+                                    Text(message)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.orange.opacity(0.08))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                )
                         }
                     }
                     .recordingCardStyle()
@@ -125,9 +139,13 @@ struct RecordingView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
 
             if let feedbackError = viewModel.feedbackError {
-                Text(feedbackError)
-                    .foregroundStyle(.red)
-                    .font(.footnote)
+                HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text(feedbackError)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
             }
 
             Button(viewModel.isRecording ? "Stop Recording" : "Start Recording") {
