@@ -74,12 +74,6 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("\(timeGreeting()), \(greetingName(profile.name))!")
                 .font(.title2.bold())
-            Text("Level: \(profile.currentLevel.displayName) (\(profile.currentLevel.cefrCode))")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text("Target: \(profile.targetScore.displayName)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -93,10 +87,38 @@ struct DashboardView: View {
             Text("Daily Goal")
                 .font(.headline)
 
-            HStack(spacing: 20) {
+            HStack(alignment: .center, spacing: 14) {
                 DailyGoalRing(progress: progress, done: done, goal: goal)
                     .padding(.vertical, 4)
-                Spacer()
+
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.28))
+                    .frame(width: 1)
+                    .padding(.vertical, 12)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Level")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .tracking(0.4)
+                        Text("\(profile.currentLevel.displayName) (\(profile.currentLevel.cefrCode))")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Target")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .tracking(0.4)
+                        Text(profile.targetScore.displayName)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
