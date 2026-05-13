@@ -77,6 +77,28 @@ final class OnboardingViewModel: ObservableObject {
         validationError = nil
     }
 
+    // Saves a new display name while keeping the same profile id and createdAt.
+    @discardableResult
+    func updateDisplayName(_ rawName: String) -> Bool {
+        validationError = nil
+        errorMessage = nil
+        guard let current = savedProfile else {
+            errorMessage = "No profile loaded."
+            return false
+        }
+        switch current.updating(name: rawName.trimmingCharacters(in: .whitespacesAndNewlines)) {
+        case .success(let updated):
+            persist(updated)
+            guard errorMessage == nil else { return false }
+            savedProfile = updated
+            applyDraft(from: updated)
+            return true
+        case .failure(let error):
+            validationError = error
+            return false
+        }
+    }
+
     // Removes persisted profile (reset onboarding in debug)
     func clearPersistedProfile() {
         UserDefaults.standard.removeObject(forKey: storageKey)

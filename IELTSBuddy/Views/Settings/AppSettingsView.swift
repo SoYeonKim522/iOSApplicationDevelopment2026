@@ -9,6 +9,7 @@ import SwiftUI
 import UIKit
 
 struct AppSettingsView: View {
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
 
     private var appVersion: String {
@@ -18,6 +19,19 @@ struct AppSettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                if onboardingViewModel.savedProfile != nil {
+                    Section("Profile") {
+                        NavigationLink {
+                            EditDisplayNameView()
+                        } label: {
+                            LabeledContent(
+                                "Display name",
+                                value: onboardingViewModel.savedProfile?.name ?? "—"
+                            )
+                        }
+                    }
+                }
+
                 Section("Appearance") {
                     Picker("Color scheme", selection: $appearancePreferenceRaw) {
                         ForEach(AppearancePreference.allCases) { preference in
@@ -59,4 +73,5 @@ struct AppSettingsView: View {
 
 #Preview {
     AppSettingsView()
+        .environmentObject(OnboardingViewModel())
 }

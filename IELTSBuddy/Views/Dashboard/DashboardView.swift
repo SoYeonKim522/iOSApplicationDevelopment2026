@@ -13,7 +13,7 @@ struct DashboardView: View {
     @StateObject private var recordingViewModel = RecordingViewModel()
     @State private var path = NavigationPath()
     
-    /// Switch main `TabView` to Practice (tag 1).
+    // Switch main TabView to Practice (tag 1).
     var goToPractice: () -> Void = {}
 
     var body: some View {
@@ -25,7 +25,7 @@ struct DashboardView: View {
                         dailyGoalCard(profile: profile)
                         statsRow
                         startPracticeButton
-                        upcomingQuestionsSection
+                        weeklyRecommendedTopicsSection
                     } else {
                         ContentUnavailableView(
                             "No profile yet",
@@ -71,25 +71,11 @@ struct DashboardView: View {
     }
 
     private func greetingBlock(profile: UserProfile) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("\(timeGreeting()), \(nameMonogram(profile.name))!")
-                    .font(.title2.bold())
-                Text("Target: \(profile.targetScore.displayName)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            HStack(spacing: 6) {
-                Image(systemName: "person.crop.circle.fill")
-                    .foregroundStyle(Color.accentColor)
-                Text(profile.currentLevel.cefrCode)
-                    .font(.caption.weight(.semibold))
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+        VStack(alignment: .leading, spacing: 6) {
+            Text("\(timeGreeting()), \(greetingName(profile.name))!")
+                .font(.title2.bold())
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func dailyGoalCard(profile: UserProfile) -> some View {
@@ -101,10 +87,38 @@ struct DashboardView: View {
             Text("Daily Goal")
                 .font(.headline)
 
-            HStack(spacing: 20) {
+            HStack(alignment: .center, spacing: 14) {
                 DailyGoalRing(progress: progress, done: done, goal: goal)
                     .padding(.vertical, 4)
-                Spacer()
+
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.28))
+                    .frame(width: 1)
+                    .padding(.vertical, 12)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Level")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .tracking(0.4)
+                        Text("\(profile.currentLevel.displayName) (\(profile.currentLevel.cefrCode))")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Target")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .tracking(0.4)
+                        Text(profile.targetScore.displayName)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -166,10 +180,10 @@ struct DashboardView: View {
             .controlSize(.large)
     }
 
-    private var upcomingQuestionsSection: some View {
+    private var weeklyRecommendedTopicsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Upcoming Questions")
+                Text("Weekly hot topics")
                     .font(.headline)
                 Spacer()
                 Button("Refresh") {
@@ -181,7 +195,17 @@ struct DashboardView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(dashboardViewModel.upcomingItems) { item in
-                        UpcomingQuestionCard(item: item)
+                        Button {
+                            recordingViewModel.preparePracticeEntry(
+                                topic: item.topicCategory,
+                                part: item.part
+                            )
+                            path.append(Route.recording)
+                        } label: {
+                            RecommendedTopicCard(item: item)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(item.topicTitle), \(item.partLabel)")
                     }
                 }
                 .padding(.vertical, 4)
@@ -198,10 +222,15 @@ struct DashboardView: View {
         }
     }
 
-    private func nameMonogram(_ name: String) -> String {
-        let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let c = t.first else { return "there" }
-        return String(c).uppercased()
+    // First word of the stored name for a natural headline ("David Lee" will be "David"; empty will be "there")
+    private func greetingName(_ fullName: String) -> String {
+        let t = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return "there" }
+        let parts = t.split(separator: " ", omittingEmptySubsequences: true)
+        if let first = parts.first {
+            return String(first)
+        }
+        return t
     }
 }
 
@@ -233,19 +262,19 @@ private struct DailyGoalRing: View {
     }
 }
 
-private struct UpcomingQuestionCard: View {
+private struct RecommendedTopicCard: View {
     let item: UpcomingQuestionItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Q\(item.questionNumber)")
-                .font(.title2.bold())
-            Text(item.partLabel)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(item.emoji)
+                .font(.title)
             Text(item.topicTitle)
                 .font(.subheadline.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
+            Text(item.partLabel)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .frame(width: 148, alignment: .leading)
         .padding(16)
