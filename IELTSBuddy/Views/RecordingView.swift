@@ -99,13 +99,16 @@ struct RecordingView: View {
                             .font(.headline)
 
                         ScrollView {
-                            Text(
-                                viewModel.hasStartedRecordingAttempt
-                                ? (viewModel.transcript.isEmpty ? "Start speaking..." : viewModel.transcript)
-                                : ""
-                            )
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
-                            .foregroundStyle(viewModel.transcript.isEmpty ? .secondary : .primary)
+                            VStack(alignment: .leading) {
+                                Text(
+                                    viewModel.hasStartedRecordingAttempt
+                                    ? (viewModel.transcript.isEmpty ? "Start speaking..." : viewModel.transcript)
+                                    : ""
+                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
                         .frame(height: 180)
 
