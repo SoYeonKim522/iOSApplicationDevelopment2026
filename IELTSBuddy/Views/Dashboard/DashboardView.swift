@@ -71,25 +71,17 @@ struct DashboardView: View {
     }
 
     private func greetingBlock(profile: UserProfile) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("\(timeGreeting()), \(greetingName(profile.name))!")
-                    .font(.title2.bold())
-                Text("Target: \(profile.targetScore.displayName)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            HStack(spacing: 6) {
-                Image(systemName: "person.crop.circle.fill")
-                    .foregroundStyle(Color.accentColor)
-                Text(profile.currentLevel.cefrCode)
-                    .font(.caption.weight(.semibold))
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+        VStack(alignment: .leading, spacing: 6) {
+            Text("\(timeGreeting()), \(greetingName(profile.name))!")
+                .font(.title2.bold())
+            Text("Level: \(profile.currentLevel.displayName) (\(profile.currentLevel.cefrCode))")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text("Target: \(profile.targetScore.displayName)")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func dailyGoalCard(profile: UserProfile) -> some View {
