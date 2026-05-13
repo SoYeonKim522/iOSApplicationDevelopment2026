@@ -2,13 +2,12 @@
 //  AppSettingsView.swift
 //  IELTSBuddy
 //
-//  Settings tab shell; keeps Review log reachable (replaces dedicated Review tab).
-//
 
 import SwiftUI
 import UIKit
 
 struct AppSettingsView: View {
+    @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
 
     private var appVersion: String {
@@ -18,6 +17,19 @@ struct AppSettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                if onboardingViewModel.savedProfile != nil {
+                    Section("Profile") {
+                        NavigationLink {
+                            EditDisplayNameView()
+                        } label: {
+                            LabeledContent(
+                                "Display name",
+                                value: onboardingViewModel.savedProfile?.name ?? "—"
+                            )
+                        }
+                    }
+                }
+
                 Section("Appearance") {
                     Picker("Color scheme", selection: $appearancePreferenceRaw) {
                         ForEach(AppearancePreference.allCases) { preference in
@@ -26,13 +38,13 @@ struct AppSettingsView: View {
                     }
                 }
 
-                Section {
-                    NavigationLink {
-                        ReviewLogView()
-                    } label: {
-                        Label("Review mistakes", systemImage: "text.magnifyingglass")
-                    }
-                }
+//                Section {
+//                    NavigationLink {
+//                        ReviewLogView()
+//                    } label: {
+//                        Label("Review mistakes", systemImage: "text.magnifyingglass")
+//                    }
+//                }
 
                 Section {
                     Button {
@@ -59,4 +71,5 @@ struct AppSettingsView: View {
 
 #Preview {
     AppSettingsView()
+        .environmentObject(OnboardingViewModel())
 }

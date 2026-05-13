@@ -83,3 +83,46 @@ struct PracticeQuestion: Codable, Identifiable, Equatable {
         try container.encode(estimatedDuration, forKey: .estimatedDuration)
     }
 }
+
+extension TopicCategory {
+    var recommendationEmoji: String {
+        switch self {
+        case .work: return "💼"
+        case .study: return "📚"
+        case .hometown: return "🏠"
+        case .hobbies: return "🎨"
+        case .environment: return "🌿"
+        case .technology: return "📱"
+        case .health: return "🏃"
+        case .travel: return "✈️"
+        case .family: return "👪"
+        case .food: return "🍽️"
+        case .culture: return "🎭"
+        case .sports: return "⚽️"
+        case .education: return "🎓"
+        case .media: return "📺"
+        case .society: return "🏛️"
+        case .business: return "📈"
+        case .accommodation: return "🏨"
+        case .weather: return "🌤️"
+        case .friends: return "🤝"
+        case .shopping: return "🛍️"
+        case .music: return "🎵"
+        case .reading: return "📖"
+        }
+    }
+
+    var displayTitleForRecommendation: String {
+        rawValue.replacingOccurrences(of: "_", with: " ").capitalized
+    }
+}
+
+extension PartType {
+    var shortLabelForRecommendation: String {
+        switch self {
+        case .part1: return "Part 1"
+        case .part2: return "Part 2"
+        case .part3: return "Part 3"
+        }
+    }
+}

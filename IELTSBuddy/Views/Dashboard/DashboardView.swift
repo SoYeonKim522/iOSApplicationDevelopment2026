@@ -2,7 +2,7 @@
 //  DashboardView.swift
 //  IELTSBuddy
 //
-//  Home hub layout aligned with design: greeting, daily ring, stats, CTA, upcoming row.
+//  Home hub layout: greeting, daily goal card, stats, practice CTA, recommended topics row.
 //
 
 import SwiftUI
@@ -10,9 +10,10 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject private var onboardingViewModel: OnboardingViewModel
     @StateObject private var dashboardViewModel = DashboardViewModel()
+    @StateObject private var recordingViewModel = RecordingViewModel()
     @State private var path = NavigationPath()
     
-    /// Switch main `TabView` to Practice (tag 1).
+    // Switch main TabView to Practice (tag 1).
     var goToPractice: () -> Void = {}
 
     var body: some View {
@@ -24,7 +25,7 @@ struct DashboardView: View {
                         dailyGoalCard(profile: profile)
                         statsRow
                         startPracticeButton
-                        upcomingQuestionsSection
+                        recommendedTopicsSection
                     } else {
                         ContentUnavailableView(
                             "No profile yet",
@@ -40,9 +41,10 @@ struct DashboardView: View {
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .recording:
-                    RecordingView(onNavigate: { route in
-                        path.append(route)
-                    })
+                    RecordingView(
+                            viewModel: recordingViewModel,
+                            onNavigate: { route in path.append(route) }
+                        )
                 case .feedback(let question, let transcript, let url):
                     FeedbackResultView(
                         questionText: question,
@@ -50,6 +52,10 @@ struct DashboardView: View {
                         audioFileURL: url,
                         onExitToRoot: {
                             path = NavigationPath()
+                        },
+                        onNextQuestion: {
+                            recordingViewModel.resetForNextQuestion()
+                            path.removeLast()
                         }
                     )
                 }
@@ -65,25 +71,11 @@ struct DashboardView: View {
     }
 
     private func greetingBlock(profile: UserProfile) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("\(timeGreeting()), \(nameMonogram(profile.name))!")
-                    .font(.title2.bold())
-                Text("Target: \(profile.targetScore.displayName)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            HStack(spacing: 6) {
-                Image(systemName: "person.crop.circle.fill")
-                    .foregroundStyle(Color.accentColor)
-                Text(profile.currentLevel.cefrCode)
-                    .font(.caption.weight(.semibold))
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(Color.accentColor.opacity(0.12)))
+        VStack(alignment: .leading, spacing: 6) {
+            Text("\(timeGreeting()), \(greetingName(profile.name))!")
+                .font(.title2.bold())
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func dailyGoalCard(profile: UserProfile) -> some View {
@@ -95,10 +87,38 @@ struct DashboardView: View {
             Text("Daily Goal")
                 .font(.headline)
 
-            HStack(spacing: 20) {
+            HStack(alignment: .center, spacing: 14) {
                 DailyGoalRing(progress: progress, done: done, goal: goal)
                     .padding(.vertical, 4)
-                Spacer()
+
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.28))
+                    .frame(width: 1)
+                    .padding(.vertical, 12)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Level")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .tracking(0.4)
+                        Text("\(profile.currentLevel.displayName) (\(profile.currentLevel.cefrCode))")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Target")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .textCase(.uppercase)
+                            .tracking(0.4)
+                        Text(profile.targetScore.displayName)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -160,22 +180,32 @@ struct DashboardView: View {
             .controlSize(.large)
     }
 
-    private var upcomingQuestionsSection: some View {
+    private var recommendedTopicsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Upcoming Questions")
+                Text("Recommended topics")
                     .font(.headline)
                 Spacer()
                 Button("Refresh") {
-                    dashboardViewModel.refreshUpcomingQuestions()
+                    dashboardViewModel.refreshRecommendedTopics()
                 }
                 .font(.caption.weight(.semibold))
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(dashboardViewModel.upcomingItems) { item in
-                        UpcomingQuestionCard(item: item)
+                    ForEach(dashboardViewModel.recommendedTopicItems) { item in
+                        Button {
+                            recordingViewModel.preparePracticeEntry(
+                                topic: item.topicCategory,
+                                part: item.part
+                            )
+                            path.append(Route.recording)
+                        } label: {
+                            RecommendedTopicCard(item: item)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(item.topicTitle), \(item.partLabel)")
                     }
                 }
                 .padding(.vertical, 4)
@@ -192,61 +222,15 @@ struct DashboardView: View {
         }
     }
 
-    private func nameMonogram(_ name: String) -> String {
-        let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let c = t.first else { return "there" }
-        return String(c).uppercased()
-    }
-}
-
-// MARK: - Pieces
-
-private struct DailyGoalRing: View {
-    let progress: CGFloat
-    let done: Int
-    let goal: Int
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.secondary.opacity(0.22), lineWidth: 12)
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-            VStack(spacing: 4) {
-                Text("\(done) / \(goal)")
-                    .font(.title2.bold())
-                Text("Today")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+    // First word of the stored name for a natural headline ("David Lee" will be "David"; empty will be "there")
+    private func greetingName(_ fullName: String) -> String {
+        let t = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return "there" }
+        let parts = t.split(separator: " ", omittingEmptySubsequences: true)
+        if let first = parts.first {
+            return String(first)
         }
-        .frame(width: 128, height: 128)
-        .accessibilityLabel("Daily goal \(done) of \(goal)")
-    }
-}
-
-private struct UpcomingQuestionCard: View {
-    let item: UpcomingQuestionItem
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Q\(item.questionNumber)")
-                .font(.title2.bold())
-            Text(item.partLabel)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(item.topicTitle)
-                .font(.subheadline.weight(.semibold))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(width: 148, alignment: .leading)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-        )
+        return t
     }
 }
 

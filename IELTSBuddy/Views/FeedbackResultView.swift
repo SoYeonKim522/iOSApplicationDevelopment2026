@@ -11,6 +11,7 @@ struct FeedbackResultView: View {
     let transcript: String
     let audioFileURL: URL?
     let onExitToRoot: () -> Void //'x' button
+    let onNextQuestion: () -> Void
 
     @Environment(\.dismiss) private var dismiss
 
@@ -20,12 +21,14 @@ struct FeedbackResultView: View {
         questionText: String,
         transcript: String,
         audioFileURL: URL?,
-        onExitToRoot: @escaping () -> Void
+        onExitToRoot: @escaping () -> Void,
+        onNextQuestion: @escaping () -> Void
     ) {
         self.questionText = questionText
         self.transcript = transcript
         self.audioFileURL = audioFileURL
         self.onExitToRoot = onExitToRoot
+        self.onNextQuestion = onNextQuestion
 
         _viewModel = StateObject(
             wrappedValue: FeedbackResultViewModel(
@@ -37,26 +40,44 @@ struct FeedbackResultView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 30) {
-                if viewModel.isLoading {
+        Group {
+            if viewModel.isLoading {
+                VStack {
+                    Spacer()
                     ProgressView("Analyzing your answer...")
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 48)
-                } else if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else if let feedback = viewModel.feedbackResult {
-                    transcriptSection
-                        .padding(.top, -20)
-
-                    scoresSection(feedback)
-
-                    aiAnalysisSection(feedback)
+                    Spacer()
+                }
+                .padding()
+            } else if let errorMessage = viewModel.errorMessage {
+                VStack {
+                    Spacer()
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.orange)
+                        Text("Something went wrong")
+                            .font(.headline)
+                        Text(errorMessage)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    Spacer()
+                }
+                .padding()
+            } else if let feedback = viewModel.feedbackResult {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 30) {
+                        transcriptSection
+                            .padding(.top, -20)
+                        scoresSection(feedback)
+                        aiAnalysisSection(feedback)
+                    }
+                    .padding()
                 }
             }
-            .padding()
         }
         .navigationTitle("Feedback")
         .navigationBarBackButtonHidden(true)
@@ -278,6 +299,7 @@ struct FeedbackResultView: View {
                 )
 
                 Button {
+                    onNextQuestion()
                 } label: {
                     Text("Next Question")
                         .frame(maxWidth: .infinity)
@@ -350,7 +372,8 @@ struct FeedbackResultView: View {
             questionText: "Describe your hometown.",
             transcript: "My hometown is very beautiful.",
             audioFileURL: nil,
-            onExitToRoot: {}
+            onExitToRoot: {},
+            onNextQuestion: {}
         )
     }
 }

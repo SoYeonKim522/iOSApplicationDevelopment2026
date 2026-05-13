@@ -79,8 +79,12 @@ struct ProfileSetupView: View {
                     } label: {
                         Label("Finish Setup", systemImage: "checkmark.circle.fill")
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(canSubmit ? Color.accentColor : Color.gray.opacity(0.4))
+                            .foregroundStyle(.white)
+                            .font(.headline)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .buttonStyle(.borderedProminent)
                     .disabled(!canSubmit)
                 }
                 .padding(.horizontal, 24)
@@ -100,8 +104,14 @@ struct ProfileSetupView: View {
     private var nameSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionLabel("Name")
+               
             TextField("Your name", text: $viewModel.name)
-                .textFieldStyle(.roundedBorder)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.3))
+                )
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
                 .submitLabel(.done)

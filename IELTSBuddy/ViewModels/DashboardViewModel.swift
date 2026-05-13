@@ -2,19 +2,11 @@
 //  DashboardViewModel.swift
 //  IELTSBuddy
 //
-//  Dashboard: session stats, upcoming question chips, optional Gemini fetch.
+//  Dashboard: session stats and recommended topic chips. Question loading lives in RecordingViewModel.
 //
 
 import Combine
 import Foundation
-import SwiftUI
-
-struct UpcomingQuestionItem: Identifiable, Equatable {
-    let id: UUID
-    let questionNumber: Int
-    let partLabel: String
-    let topicTitle: String
-}
 
 final class DashboardViewModel: ObservableObject {
 
@@ -23,20 +15,11 @@ final class DashboardViewModel: ObservableObject {
     @Published private(set) var sessionCount: Int = 0
     @Published private(set) var practicesToday: Int = 0
     @Published private(set) var weeklyPracticeCount: Int = 0
-    @Published var upcomingItems: [UpcomingQuestionItem] = []
+    @Published var recommendedTopicItems: [RecommendedTopicItem] = []
 
-    @Published var selectedTopic: TopicCategory = .work
-    @Published var selectedPart: PartType = .part1
-    @Published var currentQuestion: PracticeQuestion?
-    @Published var isLoadingQuestion: Bool = false
-    @Published var questionError: String?
-
-    private let questionGenerator: QuestionGeneratorService
-
-    init(questionGenerator: QuestionGeneratorService = QuestionGeneratorService()) {
-        self.questionGenerator = questionGenerator
+    init() {
         refreshStats()
-        refreshUpcomingQuestions()
+        refreshRecommendedTopics()
     }
 
     // Reloads counts from the same store as HistoryViewModel.
@@ -67,35 +50,10 @@ final class DashboardViewModel: ObservableObject {
         }
     }
 
-    func refreshUpcomingQuestions() {
+    func refreshRecommendedTopics() {
         let picks = TopicCategory.allCases.shuffled().prefix(3)
-        upcomingItems = picks.enumerated().map { index, topic in
-            UpcomingQuestionItem(
-                id: UUID(),
-                questionNumber: index + 1,
-                partLabel: "Part 1",
-                topicTitle: topicTitle(topic)
-            )
-        }
-    }
-
-    private func topicTitle(_ topic: TopicCategory) -> String {
-        topic.rawValue.replacingOccurrences(of: "_", with: " ").capitalized
-    }
-
-    @MainActor
-    func loadQuestion() async {
-        isLoadingQuestion = true
-        questionError = nil
-        defer { isLoadingQuestion = false }
-
-        do {
-            currentQuestion = try await questionGenerator.generateQuestion(
-                topic: selectedTopic.rawValue,
-                part: selectedPart.rawValue
-            )
-        } catch {
-            questionError = error.localizedDescription
+        recommendedTopicItems = picks.map { topic in
+            RecommendedTopicItem(id: UUID(), topicCategory: topic, part: .part1)
         }
     }
 }

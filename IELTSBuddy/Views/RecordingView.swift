@@ -7,35 +7,22 @@ import SwiftUI
 import UIKit
 
 struct RecordingView: View {
-    @StateObject private var viewModel = RecordingViewModel()
+    @ObservedObject var viewModel: RecordingViewModel
     var onNavigate: (Route) -> Void
-
+    
     var body: some View {
         VStack(spacing: 16) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 20) {
                         Text("Question Generator")
                             .font(.headline)
 
-                        HStack(spacing: 12) {
-                            Picker("Topic", selection: $viewModel.selectedTopic) {
-                                ForEach(TopicCategory.allCases, id: \.self) { topic in
-                                    Text(topic.rawValue).tag(topic)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .frame(maxWidth: .infinity)
-
-                            Picker("Part", selection: $viewModel.selectedPart) {
-                                ForEach(PartType.allCases, id: \.self) { part in
-                                    Text(part.rawValue).tag(part)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .frame(maxWidth: .infinity)
+                        HStack(spacing: 8) {
+                            MenuPicker(title: "Topic", selection: $viewModel.selectedTopic)
+                            MenuPicker(title: "Part", selection: $viewModel.selectedPart)
                         }
-
+                        
                         Button("Generate Question") {
                             Task { await viewModel.generateQuestionTapped() }
                         }
@@ -86,9 +73,23 @@ struct RecordingView: View {
                         }
 
                         if let message = viewModel.questionGeneratorError {
-                            Text(message)
-                                .foregroundStyle(.red)
-                                .font(.footnote)
+                            HStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundStyle(.orange)
+                                    Text(message)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.orange.opacity(0.08))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+                                )
                         }
                     }
                     .recordingCardStyle()
@@ -98,13 +99,16 @@ struct RecordingView: View {
                             .font(.headline)
 
                         ScrollView {
-                            Text(
-                                viewModel.hasStartedRecordingAttempt
-                                ? (viewModel.transcript.isEmpty ? "Start speaking..." : viewModel.transcript)
-                                : ""
-                            )
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
-                            .foregroundStyle(viewModel.transcript.isEmpty ? .secondary : .primary)
+                            VStack(alignment: .leading) {
+                                Text(
+                                    viewModel.hasStartedRecordingAttempt
+                                    ? (viewModel.transcript.isEmpty ? "Start speaking..." : viewModel.transcript)
+                                    : ""
+                                )
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
                         .frame(height: 180)
 
@@ -125,9 +129,13 @@ struct RecordingView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
 
             if let feedbackError = viewModel.feedbackError {
-                Text(feedbackError)
-                    .foregroundStyle(.red)
-                    .font(.footnote)
+                HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text(feedbackError)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
             }
 
             Button(viewModel.isRecording ? "Stop Recording" : "Start Recording") {
@@ -183,8 +191,41 @@ private extension View {
     }
 }
 
+private struct MenuPicker<T: CaseIterable & Hashable & RawRepresentable>: View where T.RawValue == String {
+    let title: String
+    @Binding var selection: T
+
+    var body: some View {
+        Menu {
+            ForEach(Array(T.allCases), id: \.self) { option in
+                Button(option.rawValue) { selection = option }
+            }
+        } label: {
+            HStack {
+                Text(selection.rawValue)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemBackground)))
+            .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
 #Preview {
     NavigationStack {
-        RecordingView(onNavigate: { _ in })
+        RecordingView(
+            viewModel: RecordingViewModel(),
+            onNavigate: { _ in }
+        )
     }
 }
