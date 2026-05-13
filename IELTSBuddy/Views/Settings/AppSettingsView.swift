@@ -2,8 +2,6 @@
 //  AppSettingsView.swift
 //  IELTSBuddy
 //
-//  Settings tab shell; keeps Review log reachable (replaces dedicated Review tab).
-//
 
 import SwiftUI
 import UIKit
@@ -40,13 +38,13 @@ struct AppSettingsView: View {
                     }
                 }
 
-                Section {
-                    NavigationLink {
-                        ReviewLogView()
-                    } label: {
-                        Label("Review mistakes", systemImage: "text.magnifyingglass")
-                    }
-                }
+//                Section {
+//                    NavigationLink {
+//                        ReviewLogView()
+//                    } label: {
+//                        Label("Review mistakes", systemImage: "text.magnifyingglass")
+//                    }
+//                }
 
                 Section {
                     Button {
