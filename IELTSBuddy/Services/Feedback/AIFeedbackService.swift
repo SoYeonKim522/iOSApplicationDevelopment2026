@@ -164,7 +164,7 @@ final class AIFeedbackService: AIFeedbackProviding {
         - "grammarScore": number
         - "pronunciationScore": number
         - "feedback": {"strengths":[...],"weaknesses":[...],"ideaSuggestion":[...]}. Each array: 2–3 short strings, max 12 words each.
-        - "aiCorrections": array of {"original":"...","corrected":"...","type":"grammar"|"vocabulary"|"pronunciation","explanation":"..."}. MUST contain at least 1 item; if answer is perfect, provide a more native-sounding alternative as "vocabulary" Keep each explanation concise.
+        - "aiCorrections": array of {"original":"...","corrected":"...","type":"grammar"|"vocabulary"|"pronunciation","explanation":"..."}. MUST contain at least 1 item; if answer is perfect, provide a more native-sounding alternative as "vocabulary" Keep each explanation concise. Do NOT flag punctuation
         """
     }
 
