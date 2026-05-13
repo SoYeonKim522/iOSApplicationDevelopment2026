@@ -38,13 +38,13 @@ struct WelcomeView: View {
             VStack(spacing: 16) {
                 Button(action: onContinue) {
                     Label("Let's Begin", systemImage: "arrow.right")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .font(.headline)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(Color.accentColor)
-                .foregroundStyle(.white)
-                .font(.headline)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text("No email or sign-up required")
                     .font(.subheadline)
