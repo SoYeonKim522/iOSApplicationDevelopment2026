@@ -14,28 +14,15 @@ struct RecordingView: View {
         VStack(spacing: 16) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 20) {
                         Text("Question Generator")
                             .font(.headline)
 
-                        HStack(spacing: 12) {
-                            Picker("Topic", selection: $viewModel.selectedTopic) {
-                                ForEach(TopicCategory.allCases, id: \.self) { topic in
-                                    Text(topic.rawValue).tag(topic)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .frame(maxWidth: .infinity)
-
-                            Picker("Part", selection: $viewModel.selectedPart) {
-                                ForEach(PartType.allCases, id: \.self) { part in
-                                    Text(part.rawValue).tag(part)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .frame(maxWidth: .infinity)
+                        HStack(spacing: 8) {
+                            MenuPicker(title: "Topic", selection: $viewModel.selectedTopic)
+                            MenuPicker(title: "Part", selection: $viewModel.selectedPart)
                         }
-
+                        
                         Button("Generate Question") {
                             Task { await viewModel.generateQuestionTapped() }
                         }
@@ -198,6 +185,36 @@ private extension View {
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(Color.primary.opacity(0.08), lineWidth: 1)
             )
+    }
+}
+
+private struct MenuPicker<T: CaseIterable & Hashable & RawRepresentable>: View where T.RawValue == String {
+    let title: String
+    @Binding var selection: T
+
+    var body: some View {
+        Menu {
+            ForEach(Array(T.allCases), id: \.self) { option in
+                Button(option.rawValue) { selection = option }
+            }
+        } label: {
+            HStack {
+                Text(selection.rawValue)
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemBackground)))
+            .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
