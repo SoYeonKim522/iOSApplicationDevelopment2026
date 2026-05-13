@@ -9,6 +9,7 @@ import Foundation
 import SwiftUI
 import Combine
 
+// handles filtering and aggregating mistakes across all practice sessions
 class ReviewLogViewModel: ObservableObject {
     
     @Published var allMistakes: [ReviewLog] = []
@@ -31,8 +32,8 @@ class ReviewLogViewModel: ObservableObject {
         allMistakes.filter { $0.type == .pronunciation }.count
     }
     
-    // loads all mistakes across all sessions
     func loadMistakes(from sessions: [AIFeedback]) {
+        // flatMap pulls mistakes out of every session into one list
         allMistakes = sessions.flatMap { $0.aiCorrections }
         applyFilter()
     }
@@ -56,12 +57,4 @@ class ReviewLogViewModel: ObservableObject {
         filteredMistakes = []
     }
     
-    var mostFrequentType: ErrorType? {
-        let counts = [
-            ErrorType.grammar: grammarCount,
-            ErrorType.vocabulary: vocabularyCount,
-            ErrorType.pronunciation: pronunciationCount
-        ]
-        return counts.max(by: { $0.value < $1.value })?.key
-    }
 }
