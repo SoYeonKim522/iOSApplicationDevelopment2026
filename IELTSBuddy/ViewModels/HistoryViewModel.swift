@@ -6,34 +6,36 @@
 //
 
 import Foundation
-import SwiftUI
 import Combine
+import SwiftUI
 
+// stores and manages all completed practice sessions
 class HistoryViewModel: ObservableObject {
     
     @Published var sessions: [AIFeedback] = []
     @Published var selectedSession: AIFeedback? = nil
     @Published var errorMessage: String? = nil
     private let storageKey = "savedSessions"
-  
+    
+    // all persistence goes through here to keep storage logic in one place
     private func persistSessions() {
-            do {
-                let encoded = try JSONEncoder().encode(sessions)
-                UserDefaults.standard.set(encoded, forKey: storageKey)
-            } catch {
-                print("Failed to save sessions: \(error)")
-                errorMessage = "Something went wrong. Please try again."
-            }
+        do {
+            let encoded = try JSONEncoder().encode(sessions)
+            UserDefaults.standard.set(encoded, forKey: storageKey)
+        } catch {
+            print("Failed to save sessions: \(error)")
+            errorMessage = "Something went wrong. Please try again."
         }
+    }
     
     func loadSessions() {
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
         do {
-                guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
-                sessions = try JSONDecoder().decode([AIFeedback].self, from: data)
-            } catch {
-                print("Failed to load sessions: \(error)")
-                errorMessage = "Could not load your history. Please try again."
-            }
+            sessions = try JSONDecoder().decode([AIFeedback].self, from: data)
+        } catch {
+            print("Failed to load sessions: \(error)")
+            errorMessage = "Could not load your history. Please try again."
+        }
     }
     
     // saves a new session after practice
@@ -51,17 +53,14 @@ class HistoryViewModel: ObservableObject {
     // delete a session
     func deleteSession(at offsets: IndexSet) {
         sessions.remove(atOffsets: offsets)
-        let encoder = JSONEncoder()
-        if let encoded = try? encoder.encode(sessions) {
-            UserDefaults.standard.set(encoded, forKey: "savedSessions")
-        }
+        persistSessions()
     }
     
     var totalSessions: Int {
-            sessions.count
-        }
+        sessions.count
+    }
     
     func sessions(above score: Double) -> [AIFeedback] {
-            sessions.filter { $0.overallScore >= score }
-        }
+        sessions.filter { $0.overallScore >= score }
+    }
 }
