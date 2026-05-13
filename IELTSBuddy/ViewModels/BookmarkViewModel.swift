@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+// manages saving and loading bookmarked mistakes across sessions
 class BookmarkViewModel: ObservableObject {
     
     private let storageKey = "bookmarkedMistakes"
@@ -16,17 +17,17 @@ class BookmarkViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     
     func loadBookmarks() {
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
         do {
-            guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
             bookmarks = try JSONDecoder().decode([BookmarkedMistake].self, from: data)
         } catch {
             print("Failed to load bookmarks: \(error)")
-            errorMessage = "Could not load bookmarks."
+            errorMessage = "Could not load your saved mistakes. Please try again."
         }
     }
     
     func addBookmark(from log: ReviewLog, sessionId: UUID) {
-        // don't add duplicates
+        // prevent duplicates from different screens
         guard !bookmarks.contains(where: { $0.id == log.id }) else { return }
         
         let bookmark = BookmarkedMistake(
@@ -49,14 +50,14 @@ class BookmarkViewModel: ObservableObject {
     func isBookmarked(_ id: UUID) -> Bool {
         bookmarks.contains { $0.id == id }
     }
-    
+    // all saves go through here to keep persistence logic in one place
     private func persist() {
         do {
             let encoded = try JSONEncoder().encode(bookmarks)
             UserDefaults.standard.set(encoded, forKey: storageKey)
         } catch {
             print("Failed to save bookmarks: \(error)")
-            errorMessage = "Could not save bookmark."
+            errorMessage = "Could not save your bookmark. Please try again."
         }
     }
 }
