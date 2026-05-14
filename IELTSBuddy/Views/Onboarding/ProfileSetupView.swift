@@ -71,6 +71,14 @@ struct ProfileSetupView: View {
             }
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 0) {
+                    if !canSubmit {
+                        Text("Enter your name to continue")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .multilineTextAlignment(.center)
+                            .padding(.bottom, 8)
+                    }
                     Button {
                         viewModel.saveProfile()
                         if viewModel.savedProfile != nil {
@@ -134,6 +142,9 @@ struct ProfileSetupView: View {
     private var targetScoreSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionLabel("Target Score")
+            Text("Overall band goal for Speaking practice")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             Picker("Target Score", selection: $viewModel.selectedTarget) {
                 ForEach(TargetScore.allCases) { score in
                     Text(score.displayName).tag(score)
