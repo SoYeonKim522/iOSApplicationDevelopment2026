@@ -85,8 +85,8 @@ final class RecordingViewModel: ObservableObject {
 
         do {
             currentQuestion = try await questionGenerator.generateQuestion(
-                topic: selectedTopic.rawValue,
-                part: selectedPart.rawValue
+                topic: selectedTopic,
+                part: selectedPart
             )
         } catch {
             questionGeneratorError = error.localizedDescription

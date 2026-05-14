@@ -52,7 +52,7 @@ final class QuestionGeneratorService: QuestionGenerating {
         self.apiKeyProvider = apiKeyProvider
     }
 
-    func generateQuestion(topic: String, part: String) async throws -> PracticeQuestion {
+    func generateQuestion(topic: TopicCategory, part: PartType) async throws -> PracticeQuestion {
         let apiKey: String
         do {
             apiKey = try apiKeyProvider()
@@ -138,11 +138,11 @@ final class QuestionGeneratorService: QuestionGenerating {
     }
     
     private static func buildSystemInstruction(
-        topic: String,
-        part: String,
+        topic: TopicCategory,
+        part: PartType,
         topicCategoryAllowlist: String
     ) -> String {
-        let partGuidelines = partGuidelines(for: part, topic: topic)
+        let partGuidelines = partGuidelines(for: part, topic: topic.rawValue)
         let duration = estimatedDuration(for: part)
 
         return """
@@ -156,34 +156,31 @@ final class QuestionGeneratorService: QuestionGenerating {
         """
     }
     
-    private static func partGuidelines(for part: String, topic: String) -> String {
+    private static func partGuidelines(for part: PartType, topic: String) -> String {
         switch part {
-        case "part1":
+        case .part1:
             return """
             One sentence only
             Style: "Do you enjoy...?", "How often do you...?". .
             """
-        case "part2":
+        case .part2:
             return """
             A cue card using EXACTLY this structure (preserve the newlines):
             "Describe [subject related to '\(topic)'].\\n\\nYou should say:\\n• [point 1]\\n• [point 2]\\n• [point 3]\\n\\nAnd explain [reflective prompt]."
             """
-        case "part3":
+        case .part3:
             return """
             An analytical question linked to '\(topic)'. \
             Style: "Why do you think...?", "How has ... changed?". One sentence only.
             """
-        default:
-            return "A standard IELTS speaking question. One sentence only."
         }
     }
 
-    private static func estimatedDuration(for part: String) -> Int {
+    private static func estimatedDuration(for part: PartType) -> Int {
         switch part {
-        case "part1": return 25
-        case "part2": return 120
-        case "part3": return 45
-        default: return 30
+        case .part1: return 25
+        case .part2: return 120
+        case .part3: return 45
         }
     }
     

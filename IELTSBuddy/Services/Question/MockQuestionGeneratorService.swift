@@ -7,13 +7,12 @@
 
 import Foundation
 
-
 final class MockQuestionGeneratorService: QuestionGenerating {
-    func generateQuestion(topic: String, part: String) async throws -> PracticeQuestion {
+    func generateQuestion(topic: TopicCategory, part: PartType) async throws -> PracticeQuestion {
         PracticeQuestion(
-            text: "Mock: \(topic) / \(part). Proceed to record",
-            part: PartType(rawValue: part) ?? .part1,
-            topicCategory: TopicCategory(rawValue: topic) ?? .work,
+            text: "Mock: \(topic.rawValue) / \(part.rawValue). Proceed to record",
+            part: part,
+            topicCategory: topic,
             estimatedDuration: 60
         )
     }
