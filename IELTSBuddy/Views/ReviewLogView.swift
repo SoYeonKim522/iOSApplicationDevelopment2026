@@ -64,33 +64,21 @@ struct ReviewLogView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             FilterButton(
-                                title: "All",
-                                count: viewModel.totalMistakes,
-                                isSelected: viewModel.selectedFilter == nil
-                            ) {
-                                viewModel.filterBy(nil)
-                            }
-                            FilterButton(
-                                title: "Grammar",
-                                count: viewModel.grammarCount,
-                                isSelected: viewModel.selectedFilter == .grammar
-                            ) {
-                                viewModel.filterBy(.grammar)
-                            }
-                            FilterButton(
-                                title: "Vocabulary",
-                                count: viewModel.vocabularyCount,
-                                isSelected: viewModel.selectedFilter == .vocabulary
-                            ) {
-                                viewModel.filterBy(.vocabulary)
-                            }
-                            FilterButton(
-                                title: "Pronunciation",
-                                count: viewModel.pronunciationCount,
-                                isSelected: viewModel.selectedFilter == .pronunciation
-                            ) {
-                                viewModel.filterBy(.pronunciation)
-                            }
+                                        title: "All",
+                                        count: viewModel.totalMistakes,
+                                        isSelected: viewModel.selectedFilter == nil
+                                    ) {
+                                        viewModel.filterBy(nil)
+                                    }
+                            ForEach(ErrorType.allCases, id: \.self) { type in
+                                        FilterButton(
+                                            title: type.rawValue.capitalized,
+                                            count: viewModel.count(for: type),
+                                            isSelected: viewModel.selectedFilter == type
+                                        ) {
+                                            viewModel.filterBy(type)
+                                        }
+                                    }
                         }
                         .padding(.horizontal)
                         .padding(.vertical, 12)

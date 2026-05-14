@@ -57,4 +57,8 @@ class ReviewLogViewModel: ObservableObject {
         filteredMistakes = []
     }
     
+    func count(for type: ErrorType) -> Int {
+        allMistakes.filter { $0.type == type }.count
+    }
+    
 }
