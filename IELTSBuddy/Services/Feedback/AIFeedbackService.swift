@@ -17,9 +17,9 @@ enum AIFeedbackServiceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            return "The Gemini API key is not configured. Add GEMINI_API_KEY to Secrets.plist."
+            return "The OpenAI API key is not configured. Add OPENAI_API_KEY to Secrets.plist."
         case .invalidURL:
-            return "The Gemini API URL was invalid."
+            return "The OpenAI API URL was invalid."
         case .invalidResponse:
             return "The server response could not be interpreted."
         case .httpFailure(let statusCode, let message):
@@ -38,14 +38,15 @@ enum AIFeedbackServiceError: LocalizedError {
 }
 
 final class AIFeedbackService: AIFeedbackProviding {
-    private static let endpointBase = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+    private static let openAIEndpoint = "https://api.openai.com/v1/chat/completions"
+    private static let openAIModel = "gpt-4o-mini"
 
     private let session: URLSession
     private let apiKeyProvider: () throws -> String
 
     init(
         session: URLSession = NetworkSession.makeDefault(),
-        apiKeyProvider: @escaping () throws -> String = { try APIKeyManager.shared.geminiAPIKey() }
+        apiKeyProvider: @escaping () throws -> String = { try APIKeyManager.shared.openAIAPIKey() }
     ) {
         self.session = session
         self.apiKeyProvider = apiKeyProvider
@@ -59,19 +60,20 @@ final class AIFeedbackService: AIFeedbackProviding {
             throw AIFeedbackServiceError.missingAPIKey
         }
 
-        guard let url = Self.makeEndpointURL(apiKey: apiKey) else {
+        guard let url = URL(string: Self.openAIEndpoint) else {
             throw AIFeedbackServiceError.invalidURL
         }
 
-        let systemInstruction = Self.buildSystemInstruction()
-        let userText = Self.buildUserContent(question: question, userAnswer: userAnswer)
+        let systemContent = Self.buildOpenAISystemInstruction()
+        let userContent = Self.buildUserContent(question: question, userAnswer: userAnswer)
 
-        let body = GeminiGenerateContentRequest(
-            systemInstruction: .init(parts: [.init(text: systemInstruction)]),
-            contents: [
-                .init(role: "user", parts: [.init(text: userText)]),
+        let body = OpenAIChatCompletionRequest(
+            model: Self.openAIModel,
+            messages: [
+                OpenAIChatMessage(role: "system", content: systemContent),
+                OpenAIChatMessage(role: "user", content: userContent),
             ],
-            generationConfig: .init(responseMimeType: "application/json")
+            responseFormat: .init(type: "json_object")
         )
 
         let encoder = JSONEncoder()
@@ -85,6 +87,7 @@ final class AIFeedbackService: AIFeedbackProviding {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.httpBody = bodyData
 
         let data: Data
@@ -100,18 +103,18 @@ final class AIFeedbackService: AIFeedbackProviding {
         }
 
         guard (200 ... 299).contains(http.statusCode) else {
-            let message = Self.extractGeminiErrorMessage(from: data)
+            let message = Self.extractOpenAIErrorMessage(from: data)
             throw AIFeedbackServiceError.httpFailure(statusCode: http.statusCode, message: message)
         }
 
-        let geminiResponse: GeminiGenerateContentResponse
+        let openAIResponse: OpenAIChatCompletionResponse
         do {
-            geminiResponse = try JSONDecoder().decode(GeminiGenerateContentResponse.self, from: data)
+            openAIResponse = try JSONDecoder().decode(OpenAIChatCompletionResponse.self, from: data)
         } catch {
             throw AIFeedbackServiceError.decodingFailed(underlying: error)
         }
 
-        guard let rawContent = geminiResponse.candidates?.first?.content?.parts?.first?.text?
+        guard let rawContent = openAIResponse.choices?.first?.message?.content?
             .trimmingCharacters(in: .whitespacesAndNewlines),
             !rawContent.isEmpty
         else {
@@ -130,13 +133,30 @@ final class AIFeedbackService: AIFeedbackProviding {
         }
     }
 
-    private static func makeEndpointURL(apiKey: String) -> URL? {
-        var components = URLComponents(string: endpointBase)
-        components?.queryItems = [
-            URLQueryItem(name: "key", value: apiKey),
-        ]
-        return components?.url
+    // MARK: - OpenAI helpers
+
+    private static func buildOpenAISystemInstruction() -> String {
+        let core = buildSystemInstruction()
+        return """
+        \(core)
+
+        OUTPUT FORMAT (mandatory): Respond with a single JSON object only (no markdown fences, no prose before or after). The JSON must use camelCase keys exactly as specified above and must be valid for parsing by a strict JSON decoder.
+        """
     }
+
+    private static func extractOpenAIErrorMessage(from data: Data) -> String? {
+        struct Envelope: Decodable {
+            struct Detail: Decodable {
+                let message: String?
+                let type: String?
+                let code: String?
+            }
+            let error: Detail?
+        }
+        return (try? JSONDecoder().decode(Envelope.self, from: data))?.error?.message
+    }
+
+    // MARK: - Shared prompt helpers
 
     private static func buildSystemInstruction() -> String {
         """
@@ -163,8 +183,10 @@ final class AIFeedbackService: AIFeedbackProviding {
         - "vocabularyScore": number
         - "grammarScore": number
         - "pronunciationScore": number
-        - "feedback": {"strengths":[...],"weaknesses":[...],"ideaSuggestion":[...]}. Each array: 2–3 short strings, max 12 words each.
-        - "aiCorrections": array of {"original":"...","corrected":"...","type":"grammar"|"vocabulary"|"pronunciation","explanation":"..."}. MUST contain at least 1 item; if answer is perfect, provide a more native-sounding alternative as "vocabulary" Keep each explanation concise. Do NOT flag punctuation
+        - "feedback": {"strengths":[...],"weaknesses":[...],"ideaSuggestion":[...]}.
+        CRITICAL: Each array MUST contain exactly 1-3 highly specific, actionable strings (max 15 words each). Do NOT use generic praise. Tell the user EXACTLY what to fix.
+        - "aiCorrections": array of {"original":"...","corrected":"...","type":"grammar"|"vocabulary"|"pronunciation","explanation":"..."}. 
+        CRITICAL REQUIREMENT: You MUST provide at least 1 correction. Exhaustively scan for unnatural phrasing, grammatical errors, or poor vocabulary. If the user's answer is completely flawless, you MUST still provide at least 1 advanced, native-sounding alternatives as "vocabulary". Keep each explanation concise but educational. Do NOT flag punctuation.
         """
     }
 
@@ -178,19 +200,7 @@ final class AIFeedbackService: AIFeedbackProviding {
         """
     }
 
-    private static func extractGeminiErrorMessage(from data: Data) -> String? {
-        struct Envelope: Decodable {
-            struct Detail: Decodable {
-                let code: Int?
-                let message: String?
-                let status: String?
-            }
-            let error: Detail?
-        }
-        return (try? JSONDecoder().decode(Envelope.self, from: data))?.error?.message
-    }
-
-    /// Removes a leading/trailing ```json ... ``` wrapper if the model adds one despite instructions.
+    /// Removes  ```json ... ``` wrapper, if the model adds one despite instructions
     private static func stripMarkdownCodeFence(from content: String) -> String {
         var text = content.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.hasPrefix("```") {
@@ -207,52 +217,35 @@ final class AIFeedbackService: AIFeedbackProviding {
     }
 }
 
-// MARK: - Gemini request DTOs
+// MARK: - OpenAI request / response DTOs
 
-private struct GeminiGenerateContentRequest: Encodable {
-    let systemInstruction: SystemInstructionPayload
-    let contents: [ContentPayload]
-    let generationConfig: GenerationConfigPayload
+private struct OpenAIChatCompletionRequest: Encodable {
+    let model: String
+    let messages: [OpenAIChatMessage]
+    let responseFormat: OpenAIResponseFormat
 
     enum CodingKeys: String, CodingKey {
-        case systemInstruction = "system_instruction"
-        case contents
-        case generationConfig
-    }
-
-    struct SystemInstructionPayload: Encodable {
-        let parts: [PartPayload]
-    }
-
-    struct ContentPayload: Encodable {
-        let role: String
-        let parts: [PartPayload]
-    }
-
-    struct PartPayload: Encodable {
-        let text: String
-    }
-
-    struct GenerationConfigPayload: Encodable {
-        let responseMimeType: String
-
-        enum CodingKeys: String, CodingKey {
-            case responseMimeType
-        }
+        case model
+        case messages
+        case responseFormat = "response_format"
     }
 }
 
-// MARK: - Gemini response DTOs
+private struct OpenAIChatMessage: Encodable {
+    let role: String
+    let content: String
+}
 
-private struct GeminiGenerateContentResponse: Decodable {
-    struct Candidate: Decodable {
-        struct Content: Decodable {
-            struct Part: Decodable {
-                let text: String?
-            }
-            let parts: [Part]?
+private struct OpenAIResponseFormat: Encodable {
+    let type: String
+}
+
+private struct OpenAIChatCompletionResponse: Decodable {
+    struct Choice: Decodable {
+        struct Message: Decodable {
+            let content: String?
         }
-        let content: Content?
+        let message: Message?
     }
-    let candidates: [Candidate]?
+    let choices: [Choice]?
 }

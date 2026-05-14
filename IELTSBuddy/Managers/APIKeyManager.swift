@@ -11,13 +11,13 @@ import Foundation
 enum APIKeyManagerError: LocalizedError {
     case plistNotFound
     case keyMissingOrEmpty
-
+    
     var errorDescription: String? {
         switch self {
         case .plistNotFound:
             return "Secrets.plist was not found in the app bundle. Add Secrets.plist to the IELTSBuddy target (Copy Bundle Resources)."
         case .keyMissingOrEmpty:
-            return "GEMINI_API_KEY is missing or empty in Secrets.plist."
+            return "API_KEY is missing or empty in Secrets.plist."
         }
     }
 }
@@ -27,8 +27,8 @@ final class APIKeyManager {
 
     private init() {}
 
-    /// Reads `GEMINI_API_KEY` from `Secrets.plist` in the main bundle.
-    func geminiAPIKey() throws -> String {
+    //Reads `OPENAI_API_KEY` from `Secrets.plist` in the main bundle.
+    func openAIAPIKey() throws -> String {
         guard let plistURL = Bundle.main.url(forResource: "Secrets", withExtension: "plist") else {
             throw APIKeyManagerError.plistNotFound
         }
@@ -40,7 +40,7 @@ final class APIKeyManager {
             throw APIKeyManagerError.keyMissingOrEmpty
         }
 
-        guard let raw = dictionary["GEMINI_API_KEY"] as? String else {
+        guard let raw = dictionary["OPENAI_API_KEY"] as? String else {
             throw APIKeyManagerError.keyMissingOrEmpty
         }
 
