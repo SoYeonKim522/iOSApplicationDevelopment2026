@@ -8,5 +8,5 @@
 import Foundation
 
 protocol QuestionGenerating {
-    func generateQuestion(topic: String, part: String) async throws -> PracticeQuestion
+    func generateQuestion(topic: TopicCategory, part: PartType) async throws -> PracticeQuestion
 }

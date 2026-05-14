@@ -43,16 +43,16 @@ final class QuestionGeneratorService: QuestionGenerating {
 
     private let session: URLSession
     private let apiKeyProvider: () throws -> String
-
+    
     init(
-        session: URLSession = .shared,
+        session: URLSession = NetworkSession.makeDefault(),
         apiKeyProvider: @escaping () throws -> String = { try APIKeyManager.shared.geminiAPIKey() }
     ) {
         self.session = session
         self.apiKeyProvider = apiKeyProvider
     }
 
-    func generateQuestion(topic: String, part: String) async throws -> PracticeQuestion {
+    func generateQuestion(topic: TopicCategory, part: PartType) async throws -> PracticeQuestion {
         let apiKey: String
         do {
             apiKey = try apiKeyProvider()
@@ -138,13 +138,13 @@ final class QuestionGeneratorService: QuestionGenerating {
     }
     
     private static func buildSystemInstruction(
-        topic: String,
-        part: String,
+        topic: TopicCategory,
+        part: PartType,
         topicCategoryAllowlist: String
     ) -> String {
-        let partGuidelines = partGuidelines(for: part, topic: topic)
-        let duration = estimatedDuration(for: part)
-
+        let partGuidelines = partGuidelines(for: part, topic: topic.rawValue)
+        let duration = part.estimatedDuration
+        
         return """
         IELTS examiner. Generate ONE \(part) question about '\(topic)'. Output valid JSON only, no markdown.
 
@@ -156,37 +156,25 @@ final class QuestionGeneratorService: QuestionGenerating {
         """
     }
     
-    private static func partGuidelines(for part: String, topic: String) -> String {
+    private static func partGuidelines(for part: PartType, topic: String) -> String {
         switch part {
-        case "part1":
+        case .part1:
             return """
             One sentence only
             Style: "Do you enjoy...?", "How often do you...?". .
             """
-        case "part2":
+        case .part2:
             return """
             A cue card using EXACTLY this structure (preserve the newlines):
             "Describe [subject related to '\(topic)'].\\n\\nYou should say:\\n• [point 1]\\n• [point 2]\\n• [point 3]\\n\\nAnd explain [reflective prompt]."
             """
-        case "part3":
+        case .part3:
             return """
             An analytical question linked to '\(topic)'. \
             Style: "Why do you think...?", "How has ... changed?". One sentence only.
             """
-        default:
-            return "A standard IELTS speaking question. One sentence only."
         }
     }
-
-    private static func estimatedDuration(for part: String) -> Int {
-        switch part {
-        case "part1": return 25
-        case "part2": return 120
-        case "part3": return 45
-        default: return 30
-        }
-    }
-    
 
     private static func extractGeminiErrorMessage(from data: Data) -> String? {
         struct Envelope: Decodable {

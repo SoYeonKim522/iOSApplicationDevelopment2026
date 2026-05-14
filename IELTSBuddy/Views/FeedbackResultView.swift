@@ -21,6 +21,7 @@ struct FeedbackResultView: View {
         questionText: String,
         transcript: String,
         audioFileURL: URL?,
+        services: AppServices,
         onExitToRoot: @escaping () -> Void,
         onNextQuestion: @escaping () -> Void
     ) {
@@ -34,7 +35,8 @@ struct FeedbackResultView: View {
             wrappedValue: FeedbackResultViewModel(
                 questionText: questionText,
                 transcript: transcript,
-                audioFileURL: audioFileURL
+                audioFileURL: audioFileURL,
+                services: services
             )
         )
     }
@@ -71,7 +73,7 @@ struct FeedbackResultView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 30) {
                         transcriptSection
-                            .padding(.top, -20)
+                            .padding(.top, -25)
                         scoresSection(feedback)
                         aiAnalysisSection(feedback)
                     }
@@ -108,24 +110,43 @@ struct FeedbackResultView: View {
             HStack {
                 Text("Transcript")
                     .font(.headline)
+
                 Spacer()
+
                 Button {
                     viewModel.togglePlayback()
                 } label: {
-                    Image(systemName: viewModel.isPlaying ? "stop.circle.fill" : "speaker.wave.2.circle.fill")
+                    Image(systemName: viewModel.isPlaying
+                          ? "stop.circle.fill"
+                          : "speaker.wave.2.circle.fill")
                         .font(.system(size: 30))
-                        .foregroundColor(audioFileURL == nil ? .secondary : .accentColor)
+                        .foregroundColor(
+                            audioFileURL == nil
+                            ? .secondary
+                            : .accentColor
+                        )
                         .padding(16)
                         .contentShape(Rectangle())
                 }
                 .disabled(audioFileURL == nil)
-                .accessibilityLabel(viewModel.isPlaying ? "Stop playback" : "Play recording")
+                .accessibilityLabel(
+                    viewModel.isPlaying
+                    ? "Stop playback"
+                    : "Play recording"
+                )
             }
-            
-            Text(transcript)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
+
+            if let playbackError = viewModel.playbackError {
+                Label(playbackError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
         }
+        
+        Text(transcript)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+
     }
 
     private func scoresSection(_ feedback: AIFeedback) -> some View {
@@ -371,7 +392,8 @@ struct FeedbackResultView: View {
         FeedbackResultView(
             questionText: "Describe your hometown.",
             transcript: "My hometown is very beautiful.",
-            audioFileURL: nil,
+            audioFileURL: URL(string: "file:///nonexistent.caf"),
+            services: .preview,
             onExitToRoot: {},
             onNextQuestion: {}
         )
