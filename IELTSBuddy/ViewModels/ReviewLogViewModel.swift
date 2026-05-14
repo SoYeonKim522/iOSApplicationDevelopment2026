@@ -19,15 +19,15 @@ class ReviewLogViewModel: ObservableObject {
     var totalMistakes: Int {
         filteredMistakes.count
     }
-
+    
     var grammarCount: Int {
         allMistakes.filter { $0.type == .grammar }.count
     }
-
+    
     var vocabularyCount: Int {
         allMistakes.filter { $0.type == .vocabulary }.count
     }
-
+    
     var pronunciationCount: Int {
         allMistakes.filter { $0.type == .pronunciation }.count
     }
@@ -55,6 +55,10 @@ class ReviewLogViewModel: ObservableObject {
     func clearAll() {
         allMistakes = []
         filteredMistakes = []
+    }
+    
+    func count(for type: ErrorType) -> Int {
+        allMistakes.filter { $0.type == type }.count
     }
     
 }
