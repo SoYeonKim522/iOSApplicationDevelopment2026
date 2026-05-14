@@ -74,6 +74,9 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("\(timeGreeting()), \(greetingName(profile.name))!")
                 .font(.title2.bold())
+            Text(Date(), format: .dateTime.weekday(.wide).month(.abbreviated).day())
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -210,6 +213,10 @@ struct DashboardView: View {
                 }
                 .padding(.vertical, 4)
             }
+
+            Text("Tap a topic to open practice with Part 1")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
