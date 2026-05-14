@@ -43,7 +43,7 @@ struct ProfileSetupView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    Text("This helps us tailor your daily practice. You can change it any time later.")
+                    Text("This helps us tailor your daily practice.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
