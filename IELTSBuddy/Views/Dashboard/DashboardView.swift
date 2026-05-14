@@ -13,8 +13,19 @@ struct DashboardView: View {
     @StateObject private var recordingViewModel = RecordingViewModel()
     @State private var path = NavigationPath()
     
+    let services: AppServices
+    
     // Switch main TabView to Practice (tag 1).
     var goToPractice: () -> Void = {}
+    
+    init(services: AppServices, goToPractice: @escaping () -> Void) {
+            self.services = services
+            self.goToPractice = goToPractice
+            _recordingViewModel = StateObject(wrappedValue: RecordingViewModel(
+                manager: services.speechManager,
+                questionGenerator: services.questionGenerator
+            ))
+        }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -50,6 +61,7 @@ struct DashboardView: View {
                         questionText: question,
                         transcript: transcript,
                         audioFileURL: url,
+                        services: services,
                         onExitToRoot: {
                             path = NavigationPath()
                         },
@@ -74,6 +86,9 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("\(timeGreeting()), \(greetingName(profile.name))!")
                 .font(.title2.bold())
+            Text(Date(), format: .dateTime.weekday(.wide).month(.abbreviated).day())
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -210,6 +225,10 @@ struct DashboardView: View {
                 }
                 .padding(.vertical, 4)
             }
+
+            Text("Tap a topic to open practice with Part 1")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -238,7 +257,7 @@ struct DashboardView: View {
     struct PreviewHolder: View {
         @StateObject private var vm = OnboardingViewModel()
         var body: some View {
-            DashboardView(goToPractice: {})
+            DashboardView(services: .preview, goToPractice: {})
                 .environmentObject(vm)
                 .onAppear {
                     if case .success(let p) = UserProfile.make(

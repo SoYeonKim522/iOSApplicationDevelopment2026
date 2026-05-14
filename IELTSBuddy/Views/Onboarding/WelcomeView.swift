@@ -30,6 +30,11 @@ struct WelcomeView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
+                    Text("Quick sessions • AI feedback on your answers")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                 }
             }
 
@@ -45,6 +50,11 @@ struct WelcomeView: View {
                         .font(.headline)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+
+                Text("Takes about a minute to set up")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
 
                 Text("No email or sign-up required")
                     .font(.subheadline)
