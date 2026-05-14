@@ -11,7 +11,7 @@ import Combine
 // manages saving and loading bookmarked mistakes across sessions
 class BookmarkViewModel: ObservableObject {
     
-    private let storageKey = "bookmarkedMistakes"
+    private let storageKey = StorageKeys.bookmarkedMistakes
     
     @Published var bookmarks: [BookmarkedMistake] = []
     @Published var errorMessage: String? = nil
