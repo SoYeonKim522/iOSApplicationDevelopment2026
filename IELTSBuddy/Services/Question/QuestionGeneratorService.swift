@@ -43,9 +43,9 @@ final class QuestionGeneratorService: QuestionGenerating {
 
     private let session: URLSession
     private let apiKeyProvider: () throws -> String
-
+    
     init(
-        session: URLSession = .shared,
+        session: URLSession = NetworkSession.makeDefault(),
         apiKeyProvider: @escaping () throws -> String = { try APIKeyManager.shared.geminiAPIKey() }
     ) {
         self.session = session
