@@ -19,9 +19,11 @@ final class FeedbackResultViewModel: ObservableObject {
     @Published private(set) var isLoading = true
     @Published private(set) var errorMessage: String?
     @Published private(set) var isPlaying = false
+    @Published private(set) var playbackError: String?
+    
     @Published var savedLogIDs: Set<UUID> = []
     @Published var bookmarkViewModel: BookmarkViewModel
-
+    
     private let aiFeedbackService: any AIFeedbackProviding
     private let historyViewModel: HistoryViewModel
     private let audioPlaybackManager: AudioPlaybackManaging
@@ -84,8 +86,10 @@ final class FeedbackResultViewModel: ObservableObject {
         do {
             try audioPlaybackManager.play(url: audioFileURL)
             isPlaying = true
+            playbackError = nil
         } catch {
             isPlaying = false
+            playbackError = "Unable to play recording."
         }
     }
 
