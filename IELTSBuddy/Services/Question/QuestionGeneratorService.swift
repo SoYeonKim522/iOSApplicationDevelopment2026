@@ -143,8 +143,8 @@ final class QuestionGeneratorService: QuestionGenerating {
         topicCategoryAllowlist: String
     ) -> String {
         let partGuidelines = partGuidelines(for: part, topic: topic.rawValue)
-        let duration = estimatedDuration(for: part)
-
+        let duration = part.estimatedDuration
+        
         return """
         IELTS examiner. Generate ONE \(part) question about '\(topic)'. Output valid JSON only, no markdown.
 
@@ -175,15 +175,6 @@ final class QuestionGeneratorService: QuestionGenerating {
             """
         }
     }
-
-    private static func estimatedDuration(for part: PartType) -> Int {
-        switch part {
-        case .part1: return 25
-        case .part2: return 120
-        case .part3: return 45
-        }
-    }
-    
 
     private static func extractGeminiErrorMessage(from data: Data) -> String? {
         struct Envelope: Decodable {
