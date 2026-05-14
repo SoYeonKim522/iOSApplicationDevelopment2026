@@ -15,13 +15,18 @@ class HistoryViewModel: ObservableObject {
     @Published var sessions: [AIFeedback] = []
     @Published var selectedSession: AIFeedback? = nil
     @Published var errorMessage: String? = nil
+    
     private let storageKey = StorageKeys.savedSessions
+    private let storage: StorageService
+    
+    init(storage: StorageService = UserDefaultsStorageService()) {
+            self.storage = storage
+        }
     
     // all persistence goes through here to keep storage logic in one place
     private func persistSessions() {
         do {
-            let encoded = try JSONEncoder().encode(sessions)
-            UserDefaults.standard.set(encoded, forKey: storageKey)
+            try storage.save(sessions, forKey: storageKey)
         } catch {
             print("Failed to save sessions: \(error)")
             errorMessage = "Something went wrong. Please try again."
@@ -29,9 +34,8 @@ class HistoryViewModel: ObservableObject {
     }
     
     func loadSessions() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
         do {
-            sessions = try JSONDecoder().decode([AIFeedback].self, from: data)
+            sessions = try storage.load([AIFeedback].self, forKey: storageKey) ?? []
         } catch {
             print("Failed to load sessions: \(error)")
             errorMessage = "Could not load your history. Please try again."

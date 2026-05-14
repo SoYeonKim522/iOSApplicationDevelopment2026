@@ -12,15 +12,19 @@ import Combine
 class BookmarkViewModel: ObservableObject {
     
     private let storageKey = StorageKeys.bookmarkedMistakes
+    private let storage: StorageService
     
     @Published var bookmarks: [BookmarkedMistake] = []
     @Published var errorMessage: String? = nil
     
+    init(storage: StorageService = UserDefaultsStorageService()) {
+            self.storage = storage
+        }
+    
     func loadBookmarks() {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return }
         do {
-            bookmarks = try JSONDecoder().decode([BookmarkedMistake].self, from: data)
-        } catch {
+            bookmarks = try storage.load([BookmarkedMistake].self, forKey: storageKey) ?? []
+                    } catch {
             print("Failed to load bookmarks: \(error)")
             errorMessage = "Could not load your saved mistakes. Please try again."
         }
@@ -53,8 +57,7 @@ class BookmarkViewModel: ObservableObject {
     // all saves go through here to keep persistence logic in one place
     private func persist() {
         do {
-            let encoded = try JSONEncoder().encode(bookmarks)
-            UserDefaults.standard.set(encoded, forKey: storageKey)
+            try storage.save(bookmarks, forKey: storageKey)
         } catch {
             print("Failed to save bookmarks: \(error)")
             errorMessage = "Could not save your bookmark. Please try again."
