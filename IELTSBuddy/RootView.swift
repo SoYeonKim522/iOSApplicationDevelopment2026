@@ -27,6 +27,7 @@ struct RootView: View {
                 OnboardingFlowView(viewModel: onboardingViewModel)
             }
         }
+        .preferredColorScheme(preferredColorScheme)
     }
 }
 
