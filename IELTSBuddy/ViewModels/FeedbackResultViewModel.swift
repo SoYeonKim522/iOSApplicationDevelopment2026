@@ -30,7 +30,7 @@ final class FeedbackResultViewModel: ObservableObject {
         questionText: String,
         transcript: String,
         audioFileURL: URL?,
-        aiFeedbackService: (any AIFeedbackProviding)? = nil,
+        services: AppServices,
         historyViewModel: HistoryViewModel? = nil,
         audioPlaybackManager: AudioPlaybackManaging? = nil
     ){
@@ -39,15 +39,8 @@ final class FeedbackResultViewModel: ObservableObject {
         self.transcript = transcript
         self.audioFileURL = audioFileURL
         self.audioPlaybackManager = audioPlaybackManager ?? AVAudioPlaybackManager()
-        
-        if AppConfig.useMockAPI {
-                self.aiFeedbackService = MockAIFeedbackService()
-            } else {
-                self.aiFeedbackService = aiFeedbackService ?? AIFeedbackService()
-            }
-        
+        self.aiFeedbackService = services.aiFeedback
         self.historyViewModel = historyViewModel ?? HistoryViewModel()
-        
         self.audioPlaybackManager.onFinished = { [weak self] in
             Task { @MainActor in
                 self?.isPlaying = false

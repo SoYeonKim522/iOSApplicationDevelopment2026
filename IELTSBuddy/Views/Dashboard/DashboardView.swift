@@ -13,8 +13,19 @@ struct DashboardView: View {
     @StateObject private var recordingViewModel = RecordingViewModel()
     @State private var path = NavigationPath()
     
+    let services: AppServices
+    
     // Switch main TabView to Practice (tag 1).
     var goToPractice: () -> Void = {}
+    
+    init(services: AppServices, goToPractice: @escaping () -> Void) {
+            self.services = services
+            self.goToPractice = goToPractice
+            _recordingViewModel = StateObject(wrappedValue: RecordingViewModel(
+                manager: services.speechManager,
+                questionGenerator: services.questionGenerator
+            ))
+        }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -50,6 +61,7 @@ struct DashboardView: View {
                         questionText: question,
                         transcript: transcript,
                         audioFileURL: url,
+                        services: services,
                         onExitToRoot: {
                             path = NavigationPath()
                         },
@@ -238,7 +250,7 @@ struct DashboardView: View {
     struct PreviewHolder: View {
         @StateObject private var vm = OnboardingViewModel()
         var body: some View {
-            DashboardView(goToPractice: {})
+            DashboardView(services: .preview, goToPractice: {})
                 .environmentObject(vm)
                 .onAppear {
                     if case .success(let p) = UserProfile.make(

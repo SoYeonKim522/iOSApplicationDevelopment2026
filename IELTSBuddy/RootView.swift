@@ -11,6 +11,8 @@ struct RootView: View {
     @AppStorage("appearancePreference") private var appearancePreferenceRaw = AppearancePreference.system.rawValue
 
     @StateObject private var onboardingViewModel = OnboardingViewModel()
+    
+    let services: AppServices
 
     private var preferredColorScheme: ColorScheme? {
         AppearancePreference(rawValue: appearancePreferenceRaw)?.resolvedColorScheme
@@ -19,16 +21,15 @@ struct RootView: View {
     var body: some View {
         Group {
             if onboardingViewModel.hasCompletedOnboarding {
-                ContentView()
+                ContentView(services: services)
                     .environmentObject(onboardingViewModel)
             } else {
                 OnboardingFlowView(viewModel: onboardingViewModel)
             }
         }
-        .preferredColorScheme(preferredColorScheme)
     }
 }
 
 #Preview {
-    RootView()
+    RootView(services: .preview)
 }

@@ -31,6 +31,8 @@ final class AVAudioPlaybackManager: NSObject, AudioPlaybackManaging, AVAudioPlay
     }
     
     nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        onFinished?()
+        Task { @MainActor in
+            onFinished?()
+        }
     }
 }

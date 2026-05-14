@@ -40,23 +40,17 @@ final class RecordingViewModel: ObservableObject {
         isRecording || currentQuestion != nil
     }
 
-    private let manager: SpeechRecognitionManager
+    private let manager: any SpeechRecognitionManaging
     private let questionGenerator: any QuestionGenerating
     private var timer: Timer?
     private var cancellables = Set<AnyCancellable>()
 
     init(
-        manager: SpeechRecognitionManager? = nil,
+        manager: (any SpeechRecognitionManaging)? = nil,
         questionGenerator: (any QuestionGenerating)? = nil
     ) {
         self.manager = manager ?? SpeechRecognitionManager()
-
-        if AppConfig.useMockAPI {
-            self.questionGenerator = MockQuestionGeneratorService()
-        } else {
-            self.questionGenerator = questionGenerator ?? QuestionGeneratorService()
-        }
-
+        self.questionGenerator = questionGenerator ?? QuestionGeneratorService()
         bindManager()
     }
 
@@ -109,19 +103,19 @@ final class RecordingViewModel: ObservableObject {
     }
 
     private func bindManager() {
-        manager.$transcript
+        manager.transcriptPublisher
             .sink { [weak self] in self?.transcript = $0 }
             .store(in: &cancellables)
 
-        manager.$isRecording
+        manager.isRecordingPublisher
             .sink { [weak self] in self?.isRecording = $0 }
             .store(in: &cancellables)
 
-        manager.$errorMessage
+        manager.errorMessagePublisher
             .sink { [weak self] in self?.managerErrorMessage = $0 }
             .store(in: &cancellables)
-
-        manager.objectWillChange
+        
+        manager.isRecordingPublisher
             .sink { [weak self] _ in
                 self?.audioFileURL = self?.manager.audioFileURL
             }

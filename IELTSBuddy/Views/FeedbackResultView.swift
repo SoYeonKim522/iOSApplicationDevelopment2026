@@ -21,6 +21,7 @@ struct FeedbackResultView: View {
         questionText: String,
         transcript: String,
         audioFileURL: URL?,
+        services: AppServices,
         onExitToRoot: @escaping () -> Void,
         onNextQuestion: @escaping () -> Void
     ) {
@@ -34,7 +35,8 @@ struct FeedbackResultView: View {
             wrappedValue: FeedbackResultViewModel(
                 questionText: questionText,
                 transcript: transcript,
-                audioFileURL: audioFileURL
+                audioFileURL: audioFileURL,
+                services: services
             )
         )
     }
@@ -372,6 +374,7 @@ struct FeedbackResultView: View {
             questionText: "Describe your hometown.",
             transcript: "My hometown is very beautiful.",
             audioFileURL: nil,
+            services: .preview,
             onExitToRoot: {},
             onNextQuestion: {}
         )

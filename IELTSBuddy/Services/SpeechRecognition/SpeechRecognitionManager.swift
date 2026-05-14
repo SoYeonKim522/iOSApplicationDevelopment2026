@@ -9,10 +9,14 @@ import Foundation
 import Speech
 
 @MainActor
-final class SpeechRecognitionManager: ObservableObject {
+final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManaging {
     @Published var transcript: String = ""
     @Published var isRecording: Bool = false
     @Published var errorMessage: String?
+    
+    var transcriptPublisher: AnyPublisher<String, Never> { $transcript.eraseToAnyPublisher() }
+    var isRecordingPublisher: AnyPublisher<Bool, Never> { $isRecording.eraseToAnyPublisher() }
+    var errorMessagePublisher: AnyPublisher<String?, Never> { $errorMessage.eraseToAnyPublisher() }
 
     var audioFileURL: URL?
     var audioFile: AVAudioFile?

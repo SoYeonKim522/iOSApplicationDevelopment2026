@@ -9,14 +9,16 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    
+    let services: AppServices
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            DashboardView(goToPractice: { selectedTab = 0 })
-                    .tabItem {
-                        Label("Home", systemImage: "house.fill")
-                    }
-                    .tag(0)
+            DashboardView(services: services, goToPractice: { selectedTab = 0 })
+                .tabItem {
+                    Label("Home", systemImage: "house.fill")
+                }
+                .tag(0)
 
             HistoryView()
                 .tabItem {
@@ -25,10 +27,11 @@ struct ContentView: View {
                 .tag(1)
 
             ReviewLogView()
-                            .tabItem {
-                                Label("Review", systemImage: "text.magnifyingglass")
-                            }
-                            .tag(2)
+                .tabItem {
+                    Label("Review", systemImage: "text.magnifyingglass")
+                }
+                .tag(2)
+            
             AppSettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape.fill")
@@ -39,6 +42,6 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(services: .preview)
         .environmentObject(OnboardingViewModel())
 }
