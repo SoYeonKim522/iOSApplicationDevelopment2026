@@ -20,8 +20,8 @@ class HistoryViewModel: ObservableObject {
     private let storage: StorageService
     
     init(storage: StorageService = UserDefaultsStorageService()) {
-            self.storage = storage
-        }
+        self.storage = storage
+    }
     
     // all persistence goes through here to keep storage logic in one place
     private func persistSessions() {

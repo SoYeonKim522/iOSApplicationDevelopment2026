@@ -18,19 +18,20 @@ class BookmarkViewModel: ObservableObject {
     @Published var errorMessage: String? = nil
     
     init(storage: StorageService = UserDefaultsStorageService()) {
-            self.storage = storage
-        }
+        self.storage = storage
+    }
     
     func loadBookmarks() {
         do {
             bookmarks = try storage.load([BookmarkedMistake].self, forKey: storageKey) ?? []
-                    } catch {
+        } catch {
             print("Failed to load bookmarks: \(error)")
             errorMessage = "Could not load your saved mistakes. Please try again."
         }
     }
     
     func addBookmark(from log: ReviewLog, sessionId: UUID) {
+        loadBookmarks()
         // prevent duplicates from different screens
         guard !bookmarks.contains(where: { $0.id == log.id }) else { return }
         

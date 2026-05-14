@@ -48,6 +48,7 @@ final class FeedbackResultViewModel: ObservableObject {
                 self?.isPlaying = false
             }
         }
+        self.bookmarkViewModel.loadBookmarks()
     }
 
     func loadFeedback() async {
