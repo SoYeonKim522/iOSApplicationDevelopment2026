@@ -15,7 +15,7 @@ class HistoryViewModel: ObservableObject {
     @Published var sessions: [AIFeedback] = []
     @Published var selectedSession: AIFeedback? = nil
     @Published var errorMessage: String? = nil
-    private let storageKey = "savedSessions"
+    private let storageKey = StorageKeys.savedSessions
     
     // all persistence goes through here to keep storage logic in one place
     private func persistSessions() {
