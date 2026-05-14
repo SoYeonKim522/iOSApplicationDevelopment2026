@@ -5,13 +5,12 @@
 //  Created by Soyeon Kim on 9/5/2026.
 //
 
-import AVFoundation
 import Foundation
 import SwiftUI
 import Combine
 
 @MainActor
-final class FeedbackResultViewModel: NSObject, ObservableObject, AVAudioPlayerDelegate {
+final class FeedbackResultViewModel: ObservableObject {
     let questionText: String
     let transcript: String
     let audioFileURL: URL?
@@ -25,7 +24,7 @@ final class FeedbackResultViewModel: NSObject, ObservableObject, AVAudioPlayerDe
 
     private let aiFeedbackService: any AIFeedbackProviding
     private let historyViewModel: HistoryViewModel
-    private var audioPlayer: AVAudioPlayer?
+    private let audioPlaybackManager: AudioPlaybackManaging
 
     init(
         questionText: String,
@@ -33,11 +32,13 @@ final class FeedbackResultViewModel: NSObject, ObservableObject, AVAudioPlayerDe
         audioFileURL: URL?,
         aiFeedbackService: (any AIFeedbackProviding)? = nil,
         historyViewModel: HistoryViewModel? = nil,
+        audioPlaybackManager: AudioPlaybackManaging? = nil
     ){
         self.bookmarkViewModel = BookmarkViewModel()
         self.questionText = questionText
         self.transcript = transcript
         self.audioFileURL = audioFileURL
+        self.audioPlaybackManager = audioPlaybackManager ?? AVAudioPlaybackManager()
         
         if AppConfig.useMockAPI {
                 self.aiFeedbackService = MockAIFeedbackService()
@@ -46,6 +47,12 @@ final class FeedbackResultViewModel: NSObject, ObservableObject, AVAudioPlayerDe
             }
         
         self.historyViewModel = historyViewModel ?? HistoryViewModel()
+        
+        self.audioPlaybackManager.onFinished = { [weak self] in
+            Task { @MainActor in
+                self?.isPlaying = false
+            }
+        }
     }
 
     func loadFeedback() async {
@@ -76,22 +83,13 @@ final class FeedbackResultViewModel: NSObject, ObservableObject, AVAudioPlayerDe
         guard let audioFileURL else { return }
 
         if isPlaying {
-            audioPlayer?.stop()
+            audioPlaybackManager.stop()
             isPlaying = false
             return
         }
 
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default)
-            try session.setActive(true)
-
-            let player = try AVAudioPlayer(contentsOf: audioFileURL)
-            player.delegate = self
-            player.prepareToPlay()
-            player.play()
-            
-            audioPlayer = player
+            try audioPlaybackManager.play(url: audioFileURL)
             isPlaying = true
         } catch {
             isPlaying = false
@@ -113,17 +111,10 @@ final class FeedbackResultViewModel: NSObject, ObservableObject, AVAudioPlayerDe
     func isBookmarked(_ id: UUID) -> Bool {
         bookmarkViewModel.isBookmarked(id)
     }
-
+    
     func onDisappear() {
-        audioPlayer?.stop()
-        audioPlayer = nil
+        audioPlaybackManager.stop()
         isPlaying = false
     }
 
-    //delegate function
-    nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        Task { @MainActor in
-            self.isPlaying = false
-        }
-    }
 }
