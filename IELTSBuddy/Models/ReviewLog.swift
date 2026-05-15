@@ -27,18 +27,18 @@ struct ReviewLog: Codable, Identifiable, Equatable {
     }
     
     init(
-            id: UUID = UUID(),
-            type: ErrorType,
-            original: String,
-            corrected: String,
-            explanation: String
-        ) {
-            self.id = id
-            self.type = type
-            self.original = original
-            self.corrected = corrected
-            self.explanation = explanation
-        }
+        id: UUID = UUID(),
+        type: ErrorType,
+        original: String,
+        corrected: String,
+        explanation: String
+    ) {
+        self.id = id
+        self.type = type
+        self.original = original
+        self.corrected = corrected
+        self.explanation = explanation
+    }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

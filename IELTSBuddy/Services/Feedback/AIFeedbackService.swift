@@ -38,9 +38,6 @@ enum AIFeedbackServiceError: LocalizedError {
 }
 
 final class AIFeedbackService: AIFeedbackProviding {
-    private static let openAIEndpoint = "https://api.openai.com/v1/chat/completions"
-    private static let openAIModel = "gpt-4o-mini"
-
     private let session: URLSession
     private let apiKeyProvider: () throws -> String
 
@@ -60,7 +57,7 @@ final class AIFeedbackService: AIFeedbackProviding {
             throw AIFeedbackServiceError.missingAPIKey
         }
 
-        guard let url = URL(string: Self.openAIEndpoint) else {
+        guard let url = URL(string: OpenAIConfig.endpoint) else {
             throw AIFeedbackServiceError.invalidURL
         }
 
@@ -68,7 +65,7 @@ final class AIFeedbackService: AIFeedbackProviding {
         let userContent = Self.buildUserContent(question: question, userAnswer: userAnswer)
 
         let body = OpenAIChatCompletionRequest(
-            model: Self.openAIModel,
+            model: OpenAIConfig.feedbackModel,
             messages: [
                 OpenAIChatMessage(role: "system", content: systemContent),
                 OpenAIChatMessage(role: "user", content: userContent),
@@ -103,7 +100,7 @@ final class AIFeedbackService: AIFeedbackProviding {
         }
 
         guard (200 ... 299).contains(http.statusCode) else {
-            let message = Self.extractOpenAIErrorMessage(from: data)
+            let message = OpenAIHelpers.extractOpenAIErrorMessage(from: data)
             throw AIFeedbackServiceError.httpFailure(statusCode: http.statusCode, message: message)
         }
 
@@ -121,7 +118,7 @@ final class AIFeedbackService: AIFeedbackProviding {
             throw AIFeedbackServiceError.emptyModelContent
         }
 
-        let normalizedJSON = Self.stripMarkdownCodeFence(from: rawContent)
+        let normalizedJSON = OpenAIHelpers.stripMarkdownCodeFence(from: rawContent)
         guard let jsonData = normalizedJSON.data(using: .utf8) else {
             throw AIFeedbackServiceError.emptyModelContent
         }
@@ -142,18 +139,6 @@ final class AIFeedbackService: AIFeedbackProviding {
 
         OUTPUT FORMAT (mandatory): Respond with a single JSON object only (no markdown fences, no prose before or after). The JSON must use camelCase keys exactly as specified above and must be valid for parsing by a strict JSON decoder.
         """
-    }
-
-    private static func extractOpenAIErrorMessage(from data: Data) -> String? {
-        struct Envelope: Decodable {
-            struct Detail: Decodable {
-                let message: String?
-                let type: String?
-                let code: String?
-            }
-            let error: Detail?
-        }
-        return (try? JSONDecoder().decode(Envelope.self, from: data))?.error?.message
     }
 
     // MARK: - Shared prompt helpers
@@ -200,52 +185,4 @@ final class AIFeedbackService: AIFeedbackProviding {
         """
     }
 
-    /// Removes  ```json ... ``` wrapper, if the model adds one despite instructions
-    private static func stripMarkdownCodeFence(from content: String) -> String {
-        var text = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        if text.hasPrefix("```") {
-            text.removeFirst(3)
-            if text.lowercased().hasPrefix("json") {
-                text = String(text.dropFirst(4))
-            }
-            text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            if text.hasSuffix("```") {
-                text.removeLast(3)
-            }
-        }
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-}
-
-// MARK: - OpenAI request / response DTOs
-
-private struct OpenAIChatCompletionRequest: Encodable {
-    let model: String
-    let messages: [OpenAIChatMessage]
-    let responseFormat: OpenAIResponseFormat
-
-    enum CodingKeys: String, CodingKey {
-        case model
-        case messages
-        case responseFormat = "response_format"
-    }
-}
-
-private struct OpenAIChatMessage: Encodable {
-    let role: String
-    let content: String
-}
-
-private struct OpenAIResponseFormat: Encodable {
-    let type: String
-}
-
-private struct OpenAIChatCompletionResponse: Decodable {
-    struct Choice: Decodable {
-        struct Message: Decodable {
-            let content: String?
-        }
-        let message: Message?
-    }
-    let choices: [Choice]?
 }
