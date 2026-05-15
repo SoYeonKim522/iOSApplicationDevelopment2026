@@ -12,11 +12,11 @@ import Speech
 final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManaging {
     @Published var transcript: String = ""
     @Published var isRecording: Bool = false
-    @Published var errorMessage: String?
-    
+    @Published private(set) var recordingError: RecordingError?
+
     var transcriptPublisher: AnyPublisher<String, Never> { $transcript.eraseToAnyPublisher() }
     var isRecordingPublisher: AnyPublisher<Bool, Never> { $isRecording.eraseToAnyPublisher() }
-    var errorMessagePublisher: AnyPublisher<String?, Never> { $errorMessage.eraseToAnyPublisher() }
+    var recordingErrorPublisher: AnyPublisher<RecordingError?, Never> { $recordingError.eraseToAnyPublisher() }
 
     var audioFileURL: URL?
     var audioFile: AVAudioFile?
@@ -34,11 +34,11 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
     }
 
     func requestPermissions() async {
-        errorMessage = nil
+        recordingError = nil
 
         let micGranted = await AVAudioApplication.requestRecordPermission()
         guard micGranted else {
-            errorMessage = "Microphone access is required to record your practice."
+            recordingError = .microphonePermissionDenied
             return
         }
 
@@ -48,30 +48,31 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
             }
         }
 
-        switch speechStatus {
-        case .authorized:
-            break
-        case .denied:
-            errorMessage = "Speech recognition was denied. Enable it in Settings → Privacy & Security → Speech Recognition."
-        case .restricted:
-            errorMessage = "Speech recognition is restricted on this device."
-        case .notDetermined:
-            errorMessage = "Speech recognition permission is not available."
-        @unknown default:
-            errorMessage = "Speech recognition is not available."
-        }
+        recordingError = Self.recordingError(forSpeechAuthorization: speechStatus)
     }
 
     func startRecording() {
-        errorMessage = nil
+        recordingError = nil
 
         guard let speechRecognizer, speechRecognizer.isAvailable else {
-            errorMessage = "Speech recognition is not available for this language."
+            recordingError = .speechRecognizerUnavailable
             return
         }
 
-        guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
-            errorMessage = "Speech recognition is not authorized."
+        switch SFSpeechRecognizer.authorizationStatus() {
+        case .authorized:
+            break
+        case .denied:
+            recordingError = .speechPermissionDenied
+            return
+        case .restricted:
+            recordingError = .speechPermissionRestricted
+            return
+        case .notDetermined:
+            recordingError = .speechPermissionNotDetermined
+            return
+        @unknown default:
+            recordingError = .speechNotAuthorized
             return
         }
 
@@ -80,14 +81,14 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
         Task { @MainActor in
             let micGranted = await AVAudioApplication.requestRecordPermission()
             guard micGranted else {
-                errorMessage = "Microphone access is required to record your practice."
+                recordingError = .microphonePermissionDenied
                 return
             }
 
             do {
                 try self.startRecognitionSession(using: speechRecognizer)
             } catch {
-                errorMessage = error.localizedDescription
+                recordingError = Self.recordingError(forSessionStart: error)
                 self.cleanupAfterFailure()
             }
         }
@@ -167,11 +168,15 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
         transcript = ""
 
         let audioSession = AVAudioSession.sharedInstance()
-        try audioSession.setCategory(
-            .record,
-            mode: .measurement
-        )
-        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        do {
+            try audioSession.setCategory(
+                .record,
+                mode: .measurement
+            )
+            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+        } catch {
+            throw SessionStartFailure.audioSession(error)
+        }
 
         let recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
         self.recognitionRequest = recognitionRequest
@@ -182,7 +187,13 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
         let audioFileURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("recording-\(UUID().uuidString).caf")
         self.audioFileURL = audioFileURL
-        self.audioFile = try AVAudioFile(forWriting: audioFileURL, settings: recordingFormat.settings)
+
+        do {
+            self.audioFile = try AVAudioFile(forWriting: audioFileURL, settings: recordingFormat.settings)
+        } catch {
+            throw SessionStartFailure.audioFile(error)
+        }
+
         let recognitionRequestForTap = recognitionRequest
         let audioFileForTap = self.audioFile
 
@@ -193,8 +204,8 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
                     try audioFileForTap.write(from: buffer)
                 } catch {
                     Task { @MainActor in
-                        if self?.errorMessage == nil {
-                            self?.errorMessage = "Unable to save recorded audio."
+                        if self?.recordingError == nil {
+                            self?.recordingError = .audioFileWriteFailed
                         }
                     }
                 }
@@ -203,7 +214,11 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
         audioTapInstalled = true
 
         audioEngine.prepare()
-        try audioEngine.start()
+        do {
+            try audioEngine.start()
+        } catch {
+            throw SessionStartFailure.audioEngine(error)
+        }
 
         isRecording = true
 
@@ -222,7 +237,7 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
                     let benignWhileStopping = self.isAwaitingRecognitionFinish && self.isBenignRecognitionEndError(error)
 
                     if !benignWhileStopping, self.shouldReportRecognitionError(error) {
-                        self.errorMessage = error.localizedDescription
+                        self.recordingError = RecordingError.from(error)
                     }
 
                     if benignWhileStopping {
@@ -235,6 +250,41 @@ final class SpeechRecognitionManager: ObservableObject, SpeechRecognitionManagin
                 }
             }
         }
+    }
+
+    private enum SessionStartFailure: Error {
+        case audioSession(Error)
+        case audioFile(Error)
+        case audioEngine(Error)
+    }
+
+    private static func recordingError(forSpeechAuthorization status: SFSpeechRecognizerAuthorizationStatus) -> RecordingError? {
+        switch status {
+        case .authorized:
+            return nil
+        case .denied:
+            return .speechPermissionDenied
+        case .restricted:
+            return .speechPermissionRestricted
+        case .notDetermined:
+            return .speechPermissionNotDetermined
+        @unknown default:
+            return .speechNotAuthorized
+        }
+    }
+
+    private static func recordingError(forSessionStart error: Error) -> RecordingError {
+        if let failure = error as? SessionStartFailure {
+            switch failure {
+            case .audioSession:
+                return .audioSessionSetupFailed
+            case .audioFile:
+                return .audioFileWriteFailed
+            case .audioEngine:
+                return .audioEngineStartFailed
+            }
+        }
+        return RecordingError.from(error)
     }
 
     private func isBenignRecognitionEndError(_ error: Error) -> Bool {

@@ -112,16 +112,18 @@ struct RecordingView: View {
                         }
                         .frame(height: 180)
 
-                        if let error = viewModel.managerErrorMessage {
-                            Text(error)
-                                .foregroundStyle(.red)
-                                .font(.footnote)
-                        }
+                        
                     }
                     .recordingCardStyle()
                 }
                 .padding(.bottom, 4)
                 .padding(.horizontal, 2)
+            }
+            
+            if let error = viewModel.recordingError {
+                RecordingErrorBanner(error: error) {
+                    viewModel.clearRecordingError()
+                }
             }
 
             Text(viewModel.formattedRecordingTime)
@@ -218,6 +220,80 @@ private struct MenuPicker<T: CaseIterable & Hashable & RawRepresentable>: View w
             .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+private struct RecordingErrorBanner: View {
+    let error: RecordingError
+    var onDismiss: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: iconName)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .accessibilityHidden(true)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(error.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(error.userMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 0)
+
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.body)
+                        .foregroundStyle(.tertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss error")
+            }
+
+            if error.opensSettingsWhenActionTapped {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Open Settings")
+                        .font(.footnote.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                }
+                .buttonStyle(.bordered)
+                .tint(.accentColor)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.orange.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.orange.opacity(0.3), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(error.title). \(error.userMessage)")
+    }
+
+    private var iconName: String {
+        switch error {
+        case .microphonePermissionDenied, .speechPermissionDenied, .speechNotAuthorized:
+            return "lock.fill"
+        case .speechPermissionRestricted, .speechPermissionNotDetermined, .speechRecognizerUnavailable:
+            return "mic.slash.fill"
+        case .audioSessionSetupFailed, .audioEngineStartFailed, .audioFileWriteFailed, .recognitionFailed:
+            return "exclamationmark.triangle.fill"
+        }
     }
 }
 

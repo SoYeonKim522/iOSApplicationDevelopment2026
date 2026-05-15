@@ -21,7 +21,7 @@ final class RecordingViewModel: ObservableObject {
 
     @Published private(set) var transcript: String = ""
     @Published private(set) var isRecording: Bool = false
-    @Published private(set) var managerErrorMessage: String?
+    @Published private(set) var recordingError: RecordingError?
     @Published private(set) var audioFileURL: URL?
     
     var onNavigateToFeedback: (() -> Void)?
@@ -65,6 +65,7 @@ final class RecordingViewModel: ObservableObject {
         questionGeneratorError = nil
         currentQuestion = nil
         feedbackError = nil
+        recordingError = nil
         transcript = ""
         audioFileURL = nil
         hasStartedRecordingAttempt = false
@@ -111,8 +112,8 @@ final class RecordingViewModel: ObservableObject {
             .sink { [weak self] in self?.isRecording = $0 }
             .store(in: &cancellables)
 
-        manager.errorMessagePublisher
-            .sink { [weak self] in self?.managerErrorMessage = $0 }
+        manager.recordingErrorPublisher
+            .sink { [weak self] in self?.recordingError = $0 }
             .store(in: &cancellables)
         
         manager.isRecordingPublisher
@@ -162,7 +163,12 @@ final class RecordingViewModel: ObservableObject {
         audioFileURL = nil
         hasStartedRecordingAttempt = false
         feedbackError = nil
+        recordingError = nil
         currentQuestion = nil
         recordingTime = 0
+    }
+
+    func clearRecordingError() {
+        recordingError = nil
     }
 }
