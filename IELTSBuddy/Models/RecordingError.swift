@@ -5,20 +5,40 @@
 
 import Foundation
 
-/// Typed failures for the recording / speech-recognition flow.
+/// Where on the recording screen an error should be shown.
+enum RecordingErrorPlacement: Equatable {
+    case questionGeneration
+    case recording
+    case practiceAction
+}
+
+/// Typed failures for the recording practice flow (speech, questions, validation).
 enum RecordingError: Equatable {
+    // MARK: Permissions
     case microphonePermissionDenied
     case speechPermissionDenied
     case speechPermissionRestricted
     case speechPermissionNotDetermined
-    case speechRecognizerUnavailable
     case speechNotAuthorized
+
+    // MARK: Speech / audio hardware
+    case speechRecognizerUnavailable
     case audioSessionSetupFailed
     case audioEngineStartFailed
     case audioFileWriteFailed
     case recognitionFailed
 
-    /// User-facing copy for the transcript card and banners.
+    // MARK: Question API / network
+    case authenticationError
+    case networkFailure
+    case decodingError
+
+    // MARK: Practice flow
+    case emptyTranscript
+
+    // MARK: Fallback
+    case unknown
+
     var userMessage: String {
         switch self {
         case .microphonePermissionDenied:
@@ -29,10 +49,10 @@ enum RecordingError: Equatable {
             return "Speech recognition is restricted on this device and cannot be used."
         case .speechPermissionNotDetermined:
             return "Speech recognition permission is required. Try again and allow access when prompted."
-        case .speechRecognizerUnavailable:
-            return "Speech recognition is not available for your language on this device."
         case .speechNotAuthorized:
             return "Speech recognition is not allowed yet. Grant permission in Settings, then try again."
+        case .speechRecognizerUnavailable:
+            return "Speech recognition is not available for your language on this device."
         case .audioSessionSetupFailed:
             return "Could not prepare the microphone for recording. Close other audio apps and try again."
         case .audioEngineStartFailed:
@@ -41,10 +61,19 @@ enum RecordingError: Equatable {
             return "Could not save your recording. Please try again."
         case .recognitionFailed:
             return "Speech recognition stopped unexpectedly. Please record your answer again."
+        case .authenticationError:
+            return "The app could not authenticate with the question service. Check your API key configuration."
+        case .networkFailure:
+            return "Could not reach the server. Check your internet connection and try again."
+        case .decodingError:
+            return "Received an unexpected response from the server. Please try generating a question again."
+        case .emptyTranscript:
+            return "Please speak something before stopping."
+        case .unknown:
+            return "Something went wrong. Please try again."
         }
     }
 
-    /// Short label for accessibility or UI.
     var title: String {
         switch self {
         case .microphonePermissionDenied, .speechPermissionDenied, .speechNotAuthorized:
@@ -59,10 +88,19 @@ enum RecordingError: Equatable {
             return "Could not save audio"
         case .recognitionFailed:
             return "Recognition failed"
+        case .authenticationError:
+            return "Authentication failed"
+        case .networkFailure:
+            return "Connection problem"
+        case .decodingError:
+            return "Invalid response"
+        case .emptyTranscript:
+            return "No speech detected"
+        case .unknown:
+            return "Something went wrong"
         }
     }
 
-    /// Whether the user can resolve this from the Settings app.
     var opensSettingsWhenActionTapped: Bool {
         switch self {
         case .microphonePermissionDenied, .speechPermissionDenied, .speechNotAuthorized:
@@ -72,9 +110,50 @@ enum RecordingError: Equatable {
         }
     }
 
+    var showsRetryAction: Bool {
+        switch self {
+        case .networkFailure, .decodingError, .recognitionFailed,
+             .audioSessionSetupFailed, .audioEngineStartFailed, .audioFileWriteFailed, .unknown:
+            return true
+        default:
+            return false
+        }
+    }
+
+    // MARK: - Service mappers
+
+    static func from(_ error: QuestionGeneratorServiceError) -> RecordingError {
+        switch error {
+        case .missingAPIKey:
+            return .authenticationError
+        case .networkFailed:
+            return .networkFailure
+        case .decodingFailed:
+            return .decodingError
+        case .httpFailure(let statusCode, _):
+            if statusCode == 401 || statusCode == 403 {
+                return .authenticationError
+            }
+            if (500 ... 599).contains(statusCode) {
+                return .networkFailure
+            }
+            return .unknown
+        case .invalidURL, .invalidResponse, .emptyModelContent:
+            return .decodingError
+        }
+    }
+
     /// Maps system errors from AVFoundation / Speech into stable app errors.
     static func from(_ error: Error) -> RecordingError {
+        if let serviceError = error as? QuestionGeneratorServiceError {
+            return from(serviceError)
+        }
+
         let ns = error as NSError
+
+        if ns.domain == NSURLErrorDomain {
+            return .networkFailure
+        }
 
         if ns.domain == NSOSStatusErrorDomain {
             return .audioSessionSetupFailed
@@ -82,14 +161,12 @@ enum RecordingError: Equatable {
 
         if ns.domain == "kAFAssistantErrorDomain" {
             switch ns.code {
-            case 216:
-                return .recognitionFailed
             case 1700:
                 return .speechRecognizerUnavailable
-            case 203:
-                return .recognitionFailed
             case 209:
                 return .speechNotAuthorized
+            case 216, 203:
+                return .recognitionFailed
             default:
                 break
             }
@@ -107,7 +184,7 @@ enum RecordingError: Equatable {
             return .microphonePermissionDenied
         }
 
-        return .recognitionFailed
+        return .unknown
     }
 }
 

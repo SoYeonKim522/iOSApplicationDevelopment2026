@@ -13,17 +13,16 @@ final class RecordingViewModel: ObservableObject {
     @Published var selectedTopic: TopicCategory = .work
     @Published var selectedPart: PartType = .part1
     @Published private(set) var currentQuestion: PracticeQuestion?
-    @Published private(set) var questionGeneratorError: String?
     @Published private(set) var isGeneratingQuestion: Bool = false
     @Published private(set) var recordingTime: Int = 0
-    @Published private(set) var feedbackError: String?
     @Published private(set) var hasStartedRecordingAttempt = false
 
     @Published private(set) var transcript: String = ""
     @Published private(set) var isRecording: Bool = false
-    @Published private(set) var recordingError: RecordingError?
+    @Published private(set) var activeError: RecordingError?
+    @Published private(set) var activeErrorPlacement: RecordingErrorPlacement?
     @Published private(set) var audioFileURL: URL?
-    
+
     var onNavigateToFeedback: (() -> Void)?
 
     var formattedRecordingTime: String {
@@ -58,14 +57,11 @@ final class RecordingViewModel: ObservableObject {
         await manager.requestPermissions()
     }
 
-    // Applies topic before navigating from Home shortcuts so pickers match the chosen card.
     func preparePracticeEntry(topic: TopicCategory, part: PartType) {
         selectedTopic = topic
         selectedPart = part
-        questionGeneratorError = nil
+        clearActiveError()
         currentQuestion = nil
-        feedbackError = nil
-        recordingError = nil
         transcript = ""
         audioFileURL = nil
         hasStartedRecordingAttempt = false
@@ -76,16 +72,22 @@ final class RecordingViewModel: ObservableObject {
     func generateQuestionTapped() async {
         isGeneratingQuestion = true
         defer { isGeneratingQuestion = false }
-        questionGeneratorError = nil
+        clearActiveError(for: .questionGeneration)
 
         do {
             currentQuestion = try await questionGenerator.generateQuestion(
                 topic: selectedTopic,
                 part: selectedPart
             )
+        } catch let serviceError as QuestionGeneratorServiceError {
+            setActiveError(RecordingError.from(serviceError), placement: .questionGeneration)
         } catch {
-            questionGeneratorError = error.localizedDescription
+            setActiveError(.unknown, placement: .questionGeneration)
         }
+    }
+
+    func retryQuestionGeneration() async {
+        await generateQuestionTapped()
     }
 
     func toggleRecording() {
@@ -93,7 +95,7 @@ final class RecordingViewModel: ObservableObject {
             stopRecordingAndHandleNavigation()
         } else {
             hasStartedRecordingAttempt = true
-            feedbackError = nil
+            clearActiveError(for: .practiceAction)
             manager.startRecording()
             startTimer()
         }
@@ -101,6 +103,22 @@ final class RecordingViewModel: ObservableObject {
 
     func cleanup() {
         stopTimer()
+    }
+
+    func clearActiveError() {
+        activeError = nil
+        activeErrorPlacement = nil
+    }
+
+    func clearActiveError(for placement: RecordingErrorPlacement) {
+        guard activeErrorPlacement == placement else { return }
+        activeError = nil
+        activeErrorPlacement = nil
+    }
+
+    private func setActiveError(_ error: RecordingError, placement: RecordingErrorPlacement) {
+        activeError = error
+        activeErrorPlacement = placement
     }
 
     private func bindManager() {
@@ -113,16 +131,24 @@ final class RecordingViewModel: ObservableObject {
             .store(in: &cancellables)
 
         manager.recordingErrorPublisher
-            .sink { [weak self] in self?.recordingError = $0 }
+            .sink { [weak self] error in
+                guard let self else { return }
+                if let error {
+                    guard self.activeErrorPlacement != .practiceAction else { return }
+                    self.setActiveError(error, placement: .recording)
+                } else if self.activeErrorPlacement == .recording {
+                    self.clearActiveError()
+                }
+            }
             .store(in: &cancellables)
-        
+
         manager.isRecordingPublisher
             .sink { [weak self] _ in
                 self?.audioFileURL = self?.manager.audioFileURL
             }
             .store(in: &cancellables)
     }
-    
+
     private func stopRecordingAndHandleNavigation() {
         let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -131,44 +157,38 @@ final class RecordingViewModel: ObservableObject {
 
         if trimmedTranscript.isEmpty {
             recordingTime = 0
-            feedbackError = "Please speak something before stopping."
+            setActiveError(.emptyTranscript, placement: .practiceAction)
             return
         }
 
-        feedbackError = nil
+        clearActiveError(for: .practiceAction)
         onNavigateToFeedback?()
     }
 
     private func startTimer() {
         stopTimer()
         recordingTime = 0
-        
+
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self else { return }
-            
+
             Task { @MainActor in
                 self.recordingTime += 1
             }
         }
     }
 
-
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
     }
-    
+
     func resetForNextQuestion() {
         transcript = ""
         audioFileURL = nil
         hasStartedRecordingAttempt = false
-        feedbackError = nil
-        recordingError = nil
+        clearActiveError()
         currentQuestion = nil
         recordingTime = 0
-    }
-
-    func clearRecordingError() {
-        recordingError = nil
     }
 }

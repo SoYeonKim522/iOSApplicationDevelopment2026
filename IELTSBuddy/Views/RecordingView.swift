@@ -9,7 +9,7 @@ import UIKit
 struct RecordingView: View {
     @ObservedObject var viewModel: RecordingViewModel
     var onNavigate: (Route) -> Void
-    
+
     var body: some View {
         VStack(spacing: 16) {
             ScrollView {
@@ -22,7 +22,7 @@ struct RecordingView: View {
                             MenuPicker(title: "Topic", selection: $viewModel.selectedTopic)
                             MenuPicker(title: "Part", selection: $viewModel.selectedPart)
                         }
-                        
+
                         Button("Generate Question") {
                             Task { await viewModel.generateQuestionTapped() }
                         }
@@ -72,24 +72,13 @@ struct RecordingView: View {
                             .frame(maxWidth: .infinity, minHeight: 120)
                         }
 
-                        if let message = viewModel.questionGeneratorError {
-                            HStack(spacing: 8) {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundStyle(.orange)
-                                    Text(message)
-                                        .font(.footnote)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .padding(12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .fill(Color.orange.opacity(0.08))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10)
-                                        .stroke(Color.orange.opacity(0.3), lineWidth: 1)
-                                )
+                        if let error = viewModel.activeError,
+                           viewModel.activeErrorPlacement == .questionGeneration {
+                            RecordingErrorBanner(
+                                error: error,
+                                onDismiss: { viewModel.clearActiveError(for: .questionGeneration) },
+                                onRetry: { Task { await viewModel.retryQuestionGeneration() } }
+                            )
                         }
                     }
                     .recordingCardStyle()
@@ -112,32 +101,31 @@ struct RecordingView: View {
                         }
                         .frame(height: 180)
 
-                        
+                        if let error = viewModel.activeError,
+                           viewModel.activeErrorPlacement == .recording,
+                           !error.opensSettingsWhenActionTapped {
+                            RecordingErrorBanner(
+                                error: error,
+                                onDismiss: { viewModel.clearActiveError(for: .recording) }
+                            )
+                        }
                     }
                     .recordingCardStyle()
                 }
                 .padding(.bottom, 4)
                 .padding(.horizontal, 2)
             }
-            
-            if let error = viewModel.recordingError {
-                RecordingErrorBanner(error: error) {
-                    viewModel.clearRecordingError()
-                }
-            }
 
             Text(viewModel.formattedRecordingTime)
                 .font(.title2)
                 .frame(maxWidth: .infinity, alignment: .center)
 
-            if let feedbackError = viewModel.feedbackError {
-                HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                        Text(feedbackError)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
+            if let error = viewModel.activeError,
+               viewModel.activeErrorPlacement == .practiceAction {
+                RecordingErrorBanner(
+                    error: error,
+                    onDismiss: { viewModel.clearActiveError(for: .practiceAction) }
+                )
             }
 
             Button(viewModel.isRecording ? "Stop Recording" : "Start Recording") {
@@ -161,7 +149,7 @@ struct RecordingView: View {
             Task {
                 await viewModel.requestPermissions()
             }
-            
+
             viewModel.onNavigateToFeedback = {
                 onNavigate(Route.feedback(
                     question: viewModel.currentQuestionText,
@@ -174,7 +162,50 @@ struct RecordingView: View {
             viewModel.cleanup()
         }
         .toolbar(.hidden, for: .tabBar)
+        .alert(
+            permissionAlertTitle,
+            isPresented: permissionAlertBinding,
+            actions: {
+                Button("Open Settings") {
+                    openAppSettings()
+                }
+                Button("Cancel", role: .cancel) {
+                    if let placement = viewModel.activeErrorPlacement {
+                        viewModel.clearActiveError(for: placement)
+                    }
+                }
+            },
+            message: {
+                if let error = viewModel.activeError {
+                    Text(error.userMessage)
+                }
+            }
+        )
+    }
 
+    private var permissionAlertTitle: String {
+        viewModel.activeError?.title ?? "Permission required"
+    }
+
+    private var permissionAlertBinding: Binding<Bool> {
+        Binding(
+            get: {
+                guard let error = viewModel.activeError else { return false }
+                return error.opensSettingsWhenActionTapped
+                    && viewModel.activeErrorPlacement == .recording
+            },
+            set: { isPresented in
+                if !isPresented {
+                    viewModel.clearActiveError(for: .recording)
+                }
+            }
+        )
+    }
+
+    private func openAppSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
     }
 }
 
@@ -226,6 +257,7 @@ private struct MenuPicker<T: CaseIterable & Hashable & RawRepresentable>: View w
 private struct RecordingErrorBanner: View {
     let error: RecordingError
     var onDismiss: () -> Void
+    var onRetry: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -256,19 +288,31 @@ private struct RecordingErrorBanner: View {
                 .accessibilityLabel("Dismiss error")
             }
 
-            if error.opensSettingsWhenActionTapped {
-                Button {
-                    if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
+            HStack(spacing: 8) {
+                if error.opensSettingsWhenActionTapped {
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Text("Open Settings")
+                            .font(.footnote.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
                     }
-                } label: {
-                    Text("Open Settings")
-                        .font(.footnote.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                    .buttonStyle(.bordered)
+                    .tint(.accentColor)
                 }
-                .buttonStyle(.bordered)
-                .tint(.accentColor)
+
+                if error.showsRetryAction, let onRetry {
+                    Button(action: onRetry) {
+                        Text(retryButtonTitle)
+                            .font(.footnote.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
             }
         }
         .padding(12)
@@ -285,13 +329,31 @@ private struct RecordingErrorBanner: View {
         .accessibilityLabel("\(error.title). \(error.userMessage)")
     }
 
+    private var retryButtonTitle: String {
+        switch error {
+        case .networkFailure:
+            return "Retry connection"
+        case .decodingError:
+            return "Try again"
+        default:
+            return "Retry"
+        }
+    }
+
     private var iconName: String {
         switch error {
-        case .microphonePermissionDenied, .speechPermissionDenied, .speechNotAuthorized:
+        case .microphonePermissionDenied, .speechPermissionDenied, .speechNotAuthorized, .authenticationError:
             return "lock.fill"
         case .speechPermissionRestricted, .speechPermissionNotDetermined, .speechRecognizerUnavailable:
             return "mic.slash.fill"
-        case .audioSessionSetupFailed, .audioEngineStartFailed, .audioFileWriteFailed, .recognitionFailed:
+        case .networkFailure:
+            return "wifi.exclamationmark"
+        case .decodingError:
+            return "doc.text.magnifyingglass"
+        case .emptyTranscript:
+            return "waveform"
+        case .audioSessionSetupFailed, .audioEngineStartFailed, .audioFileWriteFailed,
+             .recognitionFailed, .unknown:
             return "exclamationmark.triangle.fill"
         }
     }
