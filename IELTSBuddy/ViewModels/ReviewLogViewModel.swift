@@ -33,8 +33,9 @@ class ReviewLogViewModel: ObservableObject {
     }
     
     func loadMistakes(from sessions: [AIFeedback]) {
+        let sortedSessions = sessions.sorted { $0.date > $1.date }
         // flatMap pulls mistakes out of every session into one list
-        allMistakes = sessions.flatMap { $0.aiCorrections }
+        allMistakes = sortedSessions.flatMap { $0.aiCorrections }
         applyFilter()
     }
     

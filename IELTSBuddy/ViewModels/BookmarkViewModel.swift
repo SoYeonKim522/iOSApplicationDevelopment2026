@@ -11,6 +11,7 @@ import Combine
 // manages saving and loading bookmarked mistakes across sessions
 class BookmarkViewModel: ObservableObject {
     
+    static let shared = BookmarkViewModel()
     private let storageKey = StorageKeys.bookmarkedMistakes
     private let storage: StorageService
     
@@ -19,6 +20,7 @@ class BookmarkViewModel: ObservableObject {
     
     init(storage: StorageService = UserDefaultsStorageService()) {
         self.storage = storage
+        loadBookmarks()
     }
     
     func loadBookmarks() {

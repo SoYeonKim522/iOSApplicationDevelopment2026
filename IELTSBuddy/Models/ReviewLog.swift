@@ -51,6 +51,7 @@ struct ReviewLog: Codable, Identifiable, Equatable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
         try container.encode(original, forKey: .original)
         try container.encode(corrected, forKey: .corrected)
         try container.encode(type, forKey: .type)

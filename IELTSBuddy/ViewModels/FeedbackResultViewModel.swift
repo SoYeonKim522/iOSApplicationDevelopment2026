@@ -21,7 +21,6 @@ final class FeedbackResultViewModel: ObservableObject {
     @Published private(set) var isPlaying = false
     @Published private(set) var playbackError: String?
     
-    @Published var savedLogIDs: Set<UUID> = []
     @Published var bookmarkViewModel: BookmarkViewModel
     
     private let aiFeedbackService: any AIFeedbackProviding
@@ -36,7 +35,7 @@ final class FeedbackResultViewModel: ObservableObject {
         historyViewModel: HistoryViewModel? = nil,
         audioPlaybackManager: AudioPlaybackManaging? = nil
     ){
-        self.bookmarkViewModel = BookmarkViewModel()
+        self.bookmarkViewModel = BookmarkViewModel.shared
         self.questionText = questionText
         self.transcript = transcript
         self.audioFileURL = audioFileURL
@@ -48,7 +47,6 @@ final class FeedbackResultViewModel: ObservableObject {
                 self?.isPlaying = false
             }
         }
-        self.bookmarkViewModel.loadBookmarks()
     }
 
     func loadFeedback() async {
@@ -96,13 +94,11 @@ final class FeedbackResultViewModel: ObservableObject {
 
     func toggleSaved(_ log: ReviewLog, sessionId: UUID) {
         withAnimation(.easeInOut(duration: 0.2)) {
-            if savedLogIDs.contains(log.id) {
-                savedLogIDs.remove(log.id)
-                bookmarkViewModel.removeBookmark(id: log.id)
-            } else {
-                savedLogIDs.insert(log.id)
-                bookmarkViewModel.addBookmark(from: log, sessionId: sessionId)
-            }
+            if bookmarkViewModel.isBookmarked(log.id) {
+                        bookmarkViewModel.removeBookmark(id: log.id)
+                    } else {
+                        bookmarkViewModel.addBookmark(from: log, sessionId: sessionId)
+                    }
         }
     }
 

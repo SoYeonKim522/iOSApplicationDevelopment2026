@@ -9,7 +9,7 @@ import SwiftUI
 
 struct HistoryDetailView: View {
     let session: AIFeedback
-    @StateObject private var bookmarkViewModel = BookmarkViewModel()
+    @ObservedObject private var bookmarkViewModel = BookmarkViewModel.shared
     
     var body: some View {
         ScrollView {
@@ -92,7 +92,6 @@ struct HistoryDetailView: View {
         .navigationTitle("Session Detail")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            bookmarkViewModel.loadBookmarks()
         }
     }
     

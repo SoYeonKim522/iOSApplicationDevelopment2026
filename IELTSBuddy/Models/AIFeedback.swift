@@ -81,6 +81,7 @@ struct AIFeedback: Codable, Identifiable, Equatable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
         try container.encode(date, forKey: .date)
         try container.encode(questionText, forKey: .questionText)
         try container.encode(userAnswer, forKey: .userAnswer)

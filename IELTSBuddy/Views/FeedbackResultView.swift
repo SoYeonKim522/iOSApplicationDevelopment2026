@@ -16,6 +16,7 @@ struct FeedbackResultView: View {
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var viewModel: FeedbackResultViewModel
+    @ObservedObject private var bookmarkViewModel = BookmarkViewModel.shared
 
     init(
         questionText: String,
@@ -243,21 +244,21 @@ struct FeedbackResultView: View {
                     viewModel.toggleSaved(log, sessionId: viewModel.feedbackResult?.id ?? UUID())
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: viewModel.isBookmarked(log.id) ? "checkmark.circle.fill" : "plus.circle")
+                        Image(systemName: bookmarkViewModel.isBookmarked(log.id) ? "checkmark.circle.fill" : "plus.circle")
                             .font(.system(size: 16, weight: .semibold))
-                        if viewModel.isBookmarked(log.id) {
+                        if bookmarkViewModel.isBookmarked(log.id) {
                             Text("Saved")
                                 .font(.caption2)
                                 .fontWeight(.semibold)
                         }
                     }
-                    .foregroundStyle(viewModel.isBookmarked(log.id) ? Color.green : Color.primary)
+                    .foregroundStyle(bookmarkViewModel.isBookmarked(log.id) ? Color.green : Color.primary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 8)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(viewModel.isBookmarked(log.id) ? "Saved mistake" : "Save mistake")
+                .accessibilityLabel(bookmarkViewModel.isBookmarked(log.id) ? "Saved mistake" : "Save mistake")
             }
 
             Text(log.original)

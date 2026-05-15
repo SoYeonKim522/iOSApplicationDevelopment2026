@@ -28,7 +28,7 @@ struct HistoryView: View {
                     }
                 } else {
                     List {
-                        ForEach(viewModel.sessions) { session in
+                        ForEach(viewModel.sessions.sorted(by: { $0.date > $1.date }), id: \.id) { session in
                             NavigationLink(destination: HistoryDetailView(session: session)) {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(session.questionText)
@@ -47,7 +47,14 @@ struct HistoryView: View {
                                 .padding(.vertical, 8)
                             }
                         }
-                        .onDelete(perform: viewModel.deleteSession)
+                        .onDelete { offsets in
+                            let sessionsToDelete = offsets.map { viewModel.sortedSessions[$0] }
+                            sessionsToDelete.forEach { session in
+                                if let index = viewModel.sessions.firstIndex(of: session) {
+                                    viewModel.deleteSession(at: IndexSet(integer: index))
+                                }
+                            }
+                        }
                     }
                 }
             }

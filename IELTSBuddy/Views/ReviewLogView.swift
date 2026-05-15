@@ -10,16 +10,14 @@ import Combine
 
 struct ReviewLogView: View {
     @StateObject var viewModel = ReviewLogViewModel()
-    @StateObject var bookmarkViewModel = BookmarkViewModel()
+    @ObservedObject var bookmarkViewModel = BookmarkViewModel.shared
     @State private var selectedSegment = 0
     @State private var showingError = false
     
     init(
         viewModel: ReviewLogViewModel = ReviewLogViewModel(),
-        bookmarkViewModel: BookmarkViewModel = BookmarkViewModel()
     ) {
         _viewModel = StateObject(wrappedValue: viewModel)
-        _bookmarkViewModel = StateObject(wrappedValue: bookmarkViewModel)
     }
     
     var body: some View {
@@ -122,7 +120,6 @@ struct ReviewLogView: View {
                 let historyVM = HistoryViewModel()
                 historyVM.loadSessions()
                 viewModel.loadMistakes(from: historyVM.sessions)
-                bookmarkViewModel.loadBookmarks()
             }
             .alert("Something went wrong", isPresented: $showingError) {
                 Button("OK") {
@@ -273,7 +270,6 @@ struct FilterButton: View {
 
 #Preview {
     let reviewVM = ReviewLogViewModel()
-    let bookmarkVM = BookmarkViewModel()
     reviewVM.loadMistakes(from: [AIFeedback.mock])
-    return ReviewLogView(viewModel: reviewVM, bookmarkViewModel: bookmarkVM)
+    return ReviewLogView(viewModel: reviewVM)
 }

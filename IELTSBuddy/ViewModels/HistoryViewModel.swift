@@ -67,4 +67,8 @@ class HistoryViewModel: ObservableObject {
     func sessions(above score: Double) -> [AIFeedback] {
         sessions.filter { $0.overallScore >= score }
     }
+    
+    var sortedSessions: [AIFeedback] {
+        sessions.sorted { $0.date > $1.date }
+    }
 }
