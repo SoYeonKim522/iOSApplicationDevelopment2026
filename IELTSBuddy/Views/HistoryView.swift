@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 struct HistoryView: View {
     @StateObject var viewModel = HistoryViewModel()
@@ -48,12 +47,9 @@ struct HistoryView: View {
                             }
                         }
                         .onDelete { offsets in
-                            let sessionsToDelete = offsets.map { viewModel.sortedSessions[$0] }
-                            sessionsToDelete.forEach { session in
-                                if let index = viewModel.sessions.firstIndex(of: session) {
-                                    viewModel.deleteSession(at: IndexSet(integer: index))
-                                }
-                            }
+                            offsets
+                                .map { viewModel.sortedSessions[$0] }
+                                .forEach { viewModel.deleteSession($0) }
                         }
                     }
                 }

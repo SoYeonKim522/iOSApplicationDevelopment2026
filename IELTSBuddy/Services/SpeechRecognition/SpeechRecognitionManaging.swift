@@ -12,7 +12,6 @@ import Combine
 protocol SpeechRecognitionManaging: AnyObject {
     var transcript: String { get }
     var isRecording: Bool { get }
-    var recordingError: RecordingError? { get }
     var audioFileURL: URL? { get }
 
     var transcriptPublisher: AnyPublisher<String, Never> { get }

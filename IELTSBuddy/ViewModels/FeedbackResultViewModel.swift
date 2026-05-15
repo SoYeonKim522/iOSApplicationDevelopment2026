@@ -102,10 +102,6 @@ final class FeedbackResultViewModel: ObservableObject {
         }
     }
 
-    func isBookmarked(_ id: UUID) -> Bool {
-        bookmarkViewModel.isBookmarked(id)
-    }
-    
     func onDisappear() {
         audioPlaybackManager.stop()
         isPlaying = false

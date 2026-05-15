@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Combine
 
 struct ReviewLogView: View {
     @StateObject var viewModel = ReviewLogViewModel()

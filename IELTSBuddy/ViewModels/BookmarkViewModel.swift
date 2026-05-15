@@ -27,7 +27,6 @@ class BookmarkViewModel: ObservableObject {
         do {
             bookmarks = try storage.load([BookmarkedMistake].self, forKey: storageKey) ?? []
         } catch {
-            print("Failed to load bookmarks: \(error)")
             errorMessage = "Could not load your saved mistakes. Please try again."
         }
     }
@@ -62,7 +61,6 @@ class BookmarkViewModel: ObservableObject {
         do {
             try storage.save(bookmarks, forKey: storageKey)
         } catch {
-            print("Failed to save bookmarks: \(error)")
             errorMessage = "Could not save your bookmark. Please try again."
         }
     }

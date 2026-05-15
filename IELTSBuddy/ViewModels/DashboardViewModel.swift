@@ -43,7 +43,6 @@ final class DashboardViewModel: ObservableObject {
                 cal.isDate($0.date, equalTo: now, toGranularity: .weekOfYear)
             }.count
         } catch {
-            print("Failed to decode practice sessions for dashboard: \(error)")
             sessionCount = 0
             practicesToday = 0
             weeklyPracticeCount = 0

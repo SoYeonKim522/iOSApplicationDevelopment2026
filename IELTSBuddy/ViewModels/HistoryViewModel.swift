@@ -7,13 +7,11 @@
 
 import Foundation
 import Combine
-import SwiftUI
 
 // stores and manages all completed practice sessions
 class HistoryViewModel: ObservableObject {
     
     @Published var sessions: [AIFeedback] = []
-    @Published var selectedSession: AIFeedback? = nil
     @Published var errorMessage: String? = nil
     
     private let storageKey = StorageKeys.savedSessions
@@ -28,7 +26,6 @@ class HistoryViewModel: ObservableObject {
         do {
             try storage.save(sessions, forKey: storageKey)
         } catch {
-            print("Failed to save sessions: \(error)")
             errorMessage = "Something went wrong. Please try again."
         }
     }
@@ -37,7 +34,6 @@ class HistoryViewModel: ObservableObject {
         do {
             sessions = try storage.load([AIFeedback].self, forKey: storageKey) ?? []
         } catch {
-            print("Failed to load sessions: \(error)")
             errorMessage = "Could not load your history. Please try again."
         }
     }
@@ -49,23 +45,9 @@ class HistoryViewModel: ObservableObject {
         persistSessions()
     }
     
-    // called when user taps a session in the list
-    func selectSession(_ feedback: AIFeedback) {
-        selectedSession = feedback
-    }
-    
-    // delete a session
-    func deleteSession(at offsets: IndexSet) {
-        sessions.remove(atOffsets: offsets)
+    func deleteSession(_ session: AIFeedback) {
+        sessions.removeAll { $0.id == session.id }
         persistSessions()
-    }
-    
-    var totalSessions: Int {
-        sessions.count
-    }
-    
-    func sessions(above score: Double) -> [AIFeedback] {
-        sessions.filter { $0.overallScore >= score }
     }
     
     var sortedSessions: [AIFeedback] {

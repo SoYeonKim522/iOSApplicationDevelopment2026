@@ -11,12 +11,6 @@ enum PartType: String, Codable, CaseIterable {
     case part3
 }
 
-enum SpeakingTaskKind: Equatable {
-    case part1Interview
-    case part2LongTurn(preparationSeconds: Int, speakSeconds: Int)
-    case part3Discussion
-}
-
 enum TopicCategory: String, Codable, CaseIterable {
     case work
     case study
@@ -129,14 +123,6 @@ extension PartType {
         case .part1: return "Part 1"
         case .part2: return "Part 2"
         case .part3: return "Part 3"
-        }
-    }
-    
-    var taskKind: SpeakingTaskKind {
-        switch self {
-        case .part1: return .part1Interview
-        case .part2: return .part2LongTurn(preparationSeconds: 60, speakSeconds: 120)
-        case .part3: return .part3Discussion
         }
     }
     

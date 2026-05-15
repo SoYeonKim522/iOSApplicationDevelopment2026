@@ -9,7 +9,6 @@
 
 import Combine
 import Foundation
-import SwiftUI
 
 final class OnboardingViewModel: ObservableObject {
 
@@ -49,7 +48,6 @@ final class OnboardingViewModel: ObservableObject {
             savedProfile = profile
             applyDraft(from: profile)
         } catch {
-            print("Failed to load user profile: \(error)")
             errorMessage = "Could not load your profile. Please try again."
             savedProfile = nil
         }
@@ -118,7 +116,6 @@ final class OnboardingViewModel: ObservableObject {
             let data = try JSONEncoder().encode(profile)
             UserDefaults.standard.set(data, forKey: storageKey)
         } catch {
-            print("Failed to save user profile: \(error)")
             errorMessage = "Something went wrong saving your profile. Please try again."
         }
     }
