@@ -7,20 +7,20 @@
 ## Key Features
 - **Bite-Sized Practice:** Simply select your preferred topic and IELTS Speaking Part to jump into a quick practice session whenever you have a few spare minutes.
 - **On-Device Recording & Transcription:** Real-time speech-to-text functionality seamlessly integrated with audio recording.
-- **Gemini-Powered Feedback:** Powered by Gemini AI, the app analyzes your recording to provide an estimated band score, detailed performance feedback, and a smart list of suggested corrections.
+- **GPT-Powered Feedback:** Powered by GPT AI, the app analyzes your recording to provide an estimated band score, detailed performance feedback, and a smart list of suggested corrections.
 - **Personalized Review Log (Our Unique Feature):** Stop losing track of your mistakes. The app allows you to handpick and save specific AI corrections into your personal Review Log. These saved items are automatically categorized by mistake type (Grammar, Vocabulary, and Pronunciation), making it easy to review and target your weak spots.
 
 
 ## Tech
 - SwiftUI, MVVM
 - AVFoundation + Speech for recording / transcription
-- Gemini-based feedback for IELTS band scoring
+- GPT-based feedback for IELTS band scoring (gpt-4o-mini)
 
 ## Getting started
 1. Clone the repository to your local machine.
 2. Open `IELTSBuddy.xcodeproj` in Xcode 15 or later.
 3. Configure your Developer Team under the **Signing & Capabilities** tab.
-4. *(Optional)* Add your API key in the configuration file if testing the live AI environment.
+4. Add the provided Secrets.plist file to the project root before running the app.
 3. ⌘R to build and run the app
 
 ## Project Context
