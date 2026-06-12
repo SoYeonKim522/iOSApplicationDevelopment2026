@@ -64,8 +64,11 @@ struct AppSettingsView: View {
                     Text("Your data stays only on this device.")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.appBackground)
             .navigationTitle("Settings")
         }
+        .background(Color.appBackground)
     }
 }
 

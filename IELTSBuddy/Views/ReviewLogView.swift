@@ -113,7 +113,7 @@ struct ReviewLogView: View {
                     }
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.appBackground)
             .navigationTitle("Review Log")
             .onAppear {
                 let historyVM = HistoryViewModel()
@@ -140,13 +140,13 @@ struct ReviewLogView: View {
             Spacer()
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 44))
-                .foregroundColor(.blue.opacity(0.3))
+                .foregroundColor(Color.appPrimary.opacity(0.3))
             Text(message)
                 .font(.headline)
-                .foregroundColor(.gray)
+                .foregroundColor(Color.appTextPrimary)
             Text(subtitle)
                 .font(.subheadline)
-                .foregroundColor(.gray.opacity(0.7))
+                .foregroundColor(Color.appTextSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
             Spacer()
@@ -187,7 +187,7 @@ struct MistakeCard: View {
                                 .fontWeight(.semibold)
                         }
                     }
-                    .foregroundColor(isBookmarked ? .blue : .gray)
+                    .foregroundColor(isBookmarked ? Color.appPrimary : Color.appTextSecondary)
                 }
                 .buttonStyle(.plain)
             }
@@ -195,7 +195,7 @@ struct MistakeCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Original")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.appTextSecondary)
                 Text(original)
                     .font(.subheadline)
                     .foregroundColor(.red.opacity(0.85))
@@ -206,31 +206,31 @@ struct MistakeCard: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Corrected")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color.appTextSecondary)
                 Text(corrected)
                     .font(.subheadline)
-                    .foregroundColor(.blue)
+                    .foregroundColor(Color.appTextPrimary)
             }
             
             if !explanation.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Why")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(Color.appTextSecondary)
                     Text(explanation)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.appTextSecondary)
                 }
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color.appSurface)
         .cornerRadius(16)
     }
     
     var typeColor: Color {
         switch type {
-        case .grammar: return .blue
+        case .grammar: return Color.appPrimary
         case .vocabulary: return .orange
         case .pronunciation: return .purple
         }
@@ -252,15 +252,15 @@ struct FilterButton: View {
                     .fontWeight(.semibold)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(isSelected ? Color.white.opacity(0.3) : Color.blue.opacity(0.1))
-                    .foregroundColor(isSelected ? .white : .blue)
+                    .background(isSelected ? Color.white.opacity(0.3) : Color.appPrimary.opacity(0.1))
+                    .foregroundColor(isSelected ? .white : Color.appPrimary)
                     .cornerRadius(10)
             }
             .font(.subheadline)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(isSelected ? Color.accentColor : Color(.secondarySystemGroupedBackground))
-            .foregroundColor(isSelected ? .white : .primary)
+            .background(isSelected ? Color.appPrimary : Color.appSurface)
+            .foregroundColor(isSelected ? .white : Color.appTextPrimary)
             .cornerRadius(20)
             .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
         }

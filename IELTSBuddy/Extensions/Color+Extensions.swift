@@ -16,6 +16,9 @@ extension Color {
 
     /// Secondary card / tinted panel (`SecondarySurface` asset).
     static let appSecondarySurface = Color("SecondarySurface")
+    
+    /// Secondary card border (`SecondarySurfaceBorder` asset).
+    static let appSecondarySurfaceBorder = Color("SecondarySurfaceBorder")
 
     /// Root screen background (`BackgroundColor` asset).
     static let appBackground = Color("BackgroundColor")

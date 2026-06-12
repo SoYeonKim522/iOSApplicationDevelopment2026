@@ -45,7 +45,7 @@ struct ProfileSetupView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     Text("This helps us tailor your daily practice.")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.appTextSecondary)
 
                     nameSection
                     targetScoreSection
@@ -74,7 +74,7 @@ struct ProfileSetupView: View {
                     if !canSubmit {
                         Text("Enter your name to continue")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.appTextSecondary)
                             .frame(maxWidth: .infinity)
                             .multilineTextAlignment(.center)
                             .padding(.bottom, 8)
@@ -88,7 +88,7 @@ struct ProfileSetupView: View {
                         Label("Finish Setup", systemImage: "checkmark.circle.fill")
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .background(canSubmit ? Color.accentColor : Color.gray.opacity(0.4))
+                            .background(canSubmit ? Color.appPrimary : Color.appTextSecondary.opacity(0.4))
                             .foregroundStyle(.white)
                             .font(.headline)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -99,6 +99,7 @@ struct ProfileSetupView: View {
                 .padding(.vertical, 12)
                 .background(.ultraThinMaterial)
             }
+            .background(Color.appBackground)
             .navigationTitle("Complete Your Profile")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -116,9 +117,11 @@ struct ProfileSetupView: View {
             TextField("Your name", text: $viewModel.name)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
-                .background(
+                .background(Color.appInnerField)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3))
+                        .stroke(Color.appTextSecondary.opacity(0.3))
                 )
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
@@ -134,7 +137,7 @@ struct ProfileSetupView: View {
             } else {
                 Text("\(trimmedNameCount)/\(UserProfile.maxNameLength)")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
             }
         }
     }
@@ -144,7 +147,7 @@ struct ProfileSetupView: View {
             sectionLabel("Target Score")
             Text("Overall band goal for Speaking practice")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.appTextSecondary)
             Picker("Target Score", selection: $viewModel.selectedTarget) {
                 ForEach(TargetScore.allCases) { score in
                     Text(score.displayName).tag(score)
@@ -154,14 +157,16 @@ struct ProfileSetupView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
+            .background(Color.appInnerField)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                    .stroke(Color.appTextSecondary.opacity(0.3), lineWidth: 1)
             )
 
             Text("Suggested daily goal: \(viewModel.selectedTarget.suggestedDailyGoal) practices")
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.appTextSecondary)
         }
     }
 
@@ -172,7 +177,7 @@ struct ProfileSetupView: View {
                 Spacer()
                 Text(viewModel.selectedLevel.summary)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
             }
 
             Slider(
@@ -191,13 +196,14 @@ struct ProfileSetupView: View {
                 Text(ProficiencyLevel.allCases.last!.cefrCode)
             }
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.appTextSecondary)
         }
     }
 
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.appTextSecondary)
     }
 }
 

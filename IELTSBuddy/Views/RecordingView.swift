@@ -17,6 +17,7 @@ struct RecordingView: View {
                     VStack(alignment: .leading, spacing: 20) {
                         Text("Question Generator")
                             .font(.headline)
+                            .foregroundStyle(Color.appTextPrimary)
 
                         HStack(spacing: 8) {
                             MenuPicker(title: "Topic", selection: $viewModel.selectedTopic)
@@ -30,8 +31,8 @@ struct RecordingView: View {
                         .padding(.vertical, 12)
                         .background(
                             viewModel.isGeneratingQuestion
-                            ? Color.gray.opacity(0.35)
-                            : Color.accentColor
+                            ? Color.appTextSecondary.opacity(0.35)
+                            : Color.appPrimary
                         )
                         .foregroundStyle(.white)
                         .font(.headline)
@@ -43,6 +44,7 @@ struct RecordingView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Current Question")
                             .font(.headline)
+                            .foregroundStyle(Color.appTextPrimary)
 
                         if viewModel.isGeneratingQuestion {
                             ProgressView("Generating question...")
@@ -51,23 +53,24 @@ struct RecordingView: View {
                         } else if let currentQuestion = viewModel.currentQuestion {
                             Text(currentQuestion.text)
                                 .font(.title3.weight(.semibold))
+                                .foregroundStyle(Color.appTextPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             if currentQuestion.estimatedDuration > 0 {
                                 Text("\(currentQuestion.estimatedDuration) seconds")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.appTextSecondary)
                             }
                         } else {
                             VStack(spacing: 8) {
                                 Image(systemName: "questionmark.bubble")
                                     .font(.title3)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.appTextSecondary)
                                 Text("No question generated yet")
                                     .font(.subheadline.weight(.medium))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.appTextSecondary)
                                 Text("Tap Generate Question to begin.")
                                     .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(Color.appTextSecondary)
                             }
                             .frame(maxWidth: .infinity, minHeight: 120)
                         }
@@ -86,6 +89,7 @@ struct RecordingView: View {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Transcript")
                             .font(.headline)
+                            .foregroundStyle(Color.appTextPrimary)
 
                         ScrollView {
                             VStack(alignment: .leading) {
@@ -94,12 +98,16 @@ struct RecordingView: View {
                                     ? (viewModel.transcript.isEmpty ? "Start speaking..." : viewModel.transcript)
                                     : ""
                                 )
+                                .foregroundStyle(Color.appTextPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .multilineTextAlignment(.leading)
                                 .fixedSize(horizontal: false, vertical: true)
                             }
+                            .padding(12)
                         }
                         .frame(height: 180)
+                        .background(Color.appInnerField)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
 
                         if let error = viewModel.activeError,
                            viewModel.activeErrorPlacement == .recording,
@@ -118,6 +126,7 @@ struct RecordingView: View {
 
             Text(viewModel.formattedRecordingTime)
                 .font(.title2)
+                .foregroundStyle(Color.appTextPrimary)
                 .frame(maxWidth: .infinity, alignment: .center)
 
             if let error = viewModel.activeError,
@@ -135,8 +144,8 @@ struct RecordingView: View {
             .padding(.vertical, 14)
             .background(
                 viewModel.canTapRecordButton
-                ? Color.accentColor
-                : Color.gray.opacity(0.5)
+                ? Color.appPrimary
+                : Color.appTextSecondary.opacity(0.5)
             )
             .foregroundStyle(.white)
             .font(.headline)
@@ -144,6 +153,7 @@ struct RecordingView: View {
             .disabled(!viewModel.canTapRecordButton)
         }
         .padding()
+        .background(Color.appBackground)
         .navigationTitle("Let's practice")
         .onAppear {
             Task {
@@ -215,11 +225,11 @@ private extension View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.systemGroupedBackground))
+                    .fill(Color.appSurface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                    .stroke(Color.appTextPrimary.opacity(0.08), lineWidth: 1)
             )
     }
 }
@@ -242,13 +252,13 @@ private struct MenuPicker<T: CaseIterable & Hashable & RawRepresentable>: View w
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color(.systemBackground)))
-            .foregroundStyle(.primary)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Color.appInnerField))
+            .foregroundStyle(Color.appTextPrimary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -270,10 +280,10 @@ private struct RecordingErrorBanner: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(error.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.appTextPrimary)
                     Text(error.userMessage)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.appTextSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -282,7 +292,7 @@ private struct RecordingErrorBanner: View {
                 Button(action: onDismiss) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.body)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color.appTextSecondary)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Dismiss error")
@@ -301,7 +311,7 @@ private struct RecordingErrorBanner: View {
                             .padding(.vertical, 8)
                     }
                     .buttonStyle(.bordered)
-                    .tint(.accentColor)
+                    .tint(Color.appPrimary)
                 }
 
                 if error.showsRetryAction, let onRetry {

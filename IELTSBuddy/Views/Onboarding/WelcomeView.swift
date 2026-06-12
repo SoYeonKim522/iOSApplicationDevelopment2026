@@ -25,14 +25,15 @@ struct WelcomeView: View {
                 VStack(spacing: 8) {
                     Text("IELTS Buddy")
                         .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(Color.appTextPrimary)
                     Text("Practice IELTS Speaking with instant AI feedback")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.appTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
                     Text("Quick sessions • AI feedback on your answers")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.appTextSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 24)
                 }
@@ -45,7 +46,7 @@ struct WelcomeView: View {
                     Label("Let's Begin", systemImage: "arrow.right")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color.accentColor)
+                        .background(Color.appPrimary)
                         .foregroundStyle(.white)
                         .font(.headline)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -53,18 +54,18 @@ struct WelcomeView: View {
 
                 Text("Takes about a minute to set up")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
                     .multilineTextAlignment(.center)
 
                 Text("No email or sign-up required")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
+        .background(Color.appBackground)
     }
 }
 

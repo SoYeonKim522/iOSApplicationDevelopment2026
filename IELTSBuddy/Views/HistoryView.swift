@@ -18,10 +18,10 @@ struct HistoryView: View {
                     VStack {
                         Text("No practice sessions yet")
                             .font(.headline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(Color.appTextPrimary)
                         Text("Complete a practice session to see your history")
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(Color.appTextSecondary)
                             .multilineTextAlignment(.center)
                             .padding()
                     }
@@ -32,16 +32,17 @@ struct HistoryView: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text(session.questionText)
                                         .font(.headline)
+                                        .foregroundColor(Color.appTextPrimary)
                                         .lineLimit(2)
                                     HStack {
                                         Text("Overall: \(session.overallScore, specifier: "%.1f")")
                                             .font(.subheadline)
-                                            .foregroundColor(.blue)
+                                            .foregroundColor(Color.appPrimary)
                                         Spacer()
                                     }
                                     Text(session.date.formatted(date: .abbreviated, time: .shortened))
                                         .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(Color.appTextSecondary)
                                 }
                                 .padding(.vertical, 8)
                             }
@@ -54,6 +55,7 @@ struct HistoryView: View {
                     }
                 }
             }
+            .background(Color.appBackground)
             .navigationTitle("History")
             .onAppear {
                 viewModel.loadSessions()
