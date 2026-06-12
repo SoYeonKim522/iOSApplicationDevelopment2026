@@ -13,7 +13,7 @@ struct DailyGoalRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.appTextSecondary.opacity(0.22), lineWidth: 12)
+                .stroke(Color.appInnerField, lineWidth: 12)
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(Color.appPrimary, style: StrokeStyle(lineWidth: 12, lineCap: .round))

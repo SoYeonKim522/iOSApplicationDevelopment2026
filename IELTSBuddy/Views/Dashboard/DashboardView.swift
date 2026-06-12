@@ -29,6 +29,8 @@ struct DashboardView: View {
                 VStack(spacing: 24) {
                     if let profile = onboardingViewModel.savedProfile {
                         greetingBlock(profile: profile)
+                            .padding(.top, 8)
+                        
                         dailyGoalCard(profile: profile)
                         statsRow
                         startPracticeButton
@@ -68,7 +70,7 @@ struct DashboardView: View {
                     )
                 }
             }
-            .background(Color(.systemGroupedBackground).opacity(0.55))
+            .background(Color.appBackground)
             .navigationTitle("IELTS Buddy")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -79,12 +81,16 @@ struct DashboardView: View {
     }
 
     private func greetingBlock(profile: UserProfile) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
+            // main title
             Text("\(timeGreeting()), \(greetingName(profile.name))!")
                 .font(.title2.bold())
-            Text(Date(), format: .dateTime.weekday(.wide).month(.abbreviated).day())
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.appTextPrimary)
+            
+            // sub title (date)
+            Text(Date(), format: .dateTime.weekday(.wide).day().month(.abbreviated))
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.appTextSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -97,13 +103,14 @@ struct DashboardView: View {
         return VStack(alignment: .leading, spacing: 16) {
             Text("Daily Goal")
                 .font(.headline)
+                .foregroundStyle(Color.appTextPrimary)
 
             HStack(alignment: .center, spacing: 14) {
                 DailyGoalRing(progress: progress, done: done, goal: goal)
                     .padding(.vertical, 4)
 
                 Rectangle()
-                    .fill(Color.secondary.opacity(0.28))
+                    .fill(Color.appTextSecondary.opacity(0.28))
                     .frame(width: 1)
                     .padding(.vertical, 12)
 
@@ -111,22 +118,22 @@ struct DashboardView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Level")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.appTextSecondary)
                             .textCase(.uppercase)
                             .tracking(0.4)
                         Text("\(profile.currentLevel.displayName) (\(profile.currentLevel.cefrCode))")
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.appTextPrimary)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Target")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.appTextSecondary)
                             .textCase(.uppercase)
                             .tracking(0.4)
                         Text(profile.targetScore.displayName)
                             .font(.body.weight(.semibold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.appTextPrimary)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -136,7 +143,15 @@ struct DashboardView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color.appSecondarySurface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.appSecondarySurfaceBorder, lineWidth: 1)
+        )
+        .shadow(
+            color: Color.black.opacity(0.06),
+            radius: 10, x: 0,y: 4
         )
     }
 
@@ -145,29 +160,32 @@ struct DashboardView: View {
             statTile(
                 title: "Total Practices",
                 value: "\(dashboardViewModel.sessionCount)",
-                systemImage: "checkmark.seal.fill"
+                systemImage: "checkmark.seal"
             )
             statTile(
                 title: "This Week",
                 value: "\(dashboardViewModel.weeklyPracticeCount)",
-                systemImage: "calendar"
+                systemImage: "clock",
+                iconColor: .green
             )
         }
     }
 
-    private func statTile(title: String, value: String, systemImage: String) -> some View {
+    private func statTile(title: String, value: String, systemImage: String, iconColor: Color = .appPrimary) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
                 .font(.title3)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(iconColor)
                 .frame(width: 36, height: 36)
-                .background(Circle().fill(Color.accentColor.opacity(0.12)))
+                .background(Circle().fill(Color.appPrimary.opacity(0.12)))
+                
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
                     .font(.title3.bold())
+                    .foregroundStyle(Color.appTextPrimary)
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
             }
             Spacer(minLength: 0)
         }
@@ -175,19 +193,25 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color.appSurface)
+        )
+        .shadow(
+            color: Color.black.opacity(0.03),
+            radius: 10, x: 0,y: 4
         )
     }
 
     private var startPracticeButton: some View {
         Button {
-                path.append(Route.recording) 
+                path.append(Route.recording)
             } label: {
-                Label("Start New Practice", systemImage: "mic.fill")
+                Label("Start New Practice", systemImage: "mic")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+
+            .tint(Color.appPrimary)
             .controlSize(.large)
     }
 
@@ -196,11 +220,16 @@ struct DashboardView: View {
             HStack {
                 Text("Recommended topics")
                     .font(.headline)
+                    .foregroundStyle(Color.appTextPrimary)
                 Spacer()
-                Button("Refresh") {
+                
+                Button {
                     dashboardViewModel.refreshRecommendedTopics()
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.appPrimary)
                 }
-                .font(.caption.weight(.semibold))
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -224,7 +253,7 @@ struct DashboardView: View {
 
             Text("Tap a topic to open practice with Part 1")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color.appTextSecondary)
         }
     }
 
@@ -237,7 +266,6 @@ struct DashboardView: View {
         }
     }
 
-    // First word of the stored name for a natural headline ("David Lee" will be "David"; empty will be "there")
     private func greetingName(_ fullName: String) -> String {
         let t = fullName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !t.isEmpty else { return "there" }
@@ -248,6 +276,7 @@ struct DashboardView: View {
         return t
     }
 }
+
 
 #Preview {
     struct PreviewHolder: View {
