@@ -44,7 +44,7 @@ class BookmarkViewModel: ObservableObject {
             explanation: log.explanation,
             sessionId: sessionId
         )
-        bookmarks.append(bookmark)
+        bookmarks.insert(bookmark, at: 0)
         persist()
     }
     
