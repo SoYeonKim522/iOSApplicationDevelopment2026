@@ -53,7 +53,6 @@ struct RecordingView: View {
                         } else if let currentQuestion = viewModel.currentQuestion {
                             Text(currentQuestion.text)
                                 .font(.title3.weight(.semibold))
-                                .foregroundStyle(Color.appTextPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             if currentQuestion.estimatedDuration > 0 {
                                 Text("\(currentQuestion.estimatedDuration) seconds")
@@ -96,18 +95,20 @@ struct RecordingView: View {
                                 Text(
                                     viewModel.hasStartedRecordingAttempt
                                     ? (viewModel.transcript.isEmpty ? "Start speaking..." : viewModel.transcript)
-                                    : ""
+                                    : "Your transcript will appear here"
                                 )
-                                .foregroundStyle(Color.appTextPrimary)
+                                .foregroundStyle(viewModel.transcript.isEmpty ? Color.appTextSecondary : Color.appTextPrimary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .multilineTextAlignment(.leading)
                                 .fixedSize(horizontal: false, vertical: true)
+                                .padding(4)
                             }
                             .padding(12)
                         }
                         .frame(height: 180)
                         .background(Color.appInnerField)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .padding(.vertical, 8)
 
                         if let error = viewModel.activeError,
                            viewModel.activeErrorPlacement == .recording,
@@ -125,7 +126,7 @@ struct RecordingView: View {
             }
 
             Text(viewModel.formattedRecordingTime)
-                .font(.title2)
+                .font(.title)
                 .foregroundStyle(Color.appTextPrimary)
                 .frame(maxWidth: .infinity, alignment: .center)
 
@@ -137,8 +138,13 @@ struct RecordingView: View {
                 )
             }
 
-            Button(viewModel.isRecording ? "Stop Recording" : "Start Recording") {
+            Button {
                 viewModel.toggleRecording()
+            } label: {
+                Label(
+                    viewModel.isRecording ? "Stop Recording" : "Start Recording",
+                    systemImage: viewModel.isRecording ? "square.fill" : "mic"
+                )
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
@@ -231,6 +237,12 @@ private extension View {
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(Color.appTextPrimary.opacity(0.08), lineWidth: 1)
             )
+            .shadow(
+                color: Color.black.opacity(0.03),
+                radius: 10,
+                x: 0,
+                y: 4
+            )
     }
 }
 
@@ -246,19 +258,26 @@ private struct MenuPicker<T: CaseIterable & Hashable & RawRepresentable>: View w
         } label: {
             HStack {
                 Text(selection.rawValue)
-                    .font(.subheadline)
+                    .font(.system(size: 16, weight: .semibold))
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Spacer()
-                Image(systemName: "chevron.up.chevron.down")
+                Image(systemName: "chevron.down")
                     .font(.caption2)
                     .foregroundStyle(Color.appTextSecondary)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.appInnerField))
-            .foregroundStyle(Color.appTextPrimary)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.appInnerField)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.appTextPrimary.opacity(0.2), lineWidth: 1)
+            )
+            .foregroundStyle(Color.appPrimary)
         }
         .frame(maxWidth: .infinity)
     }
