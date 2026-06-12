@@ -47,9 +47,22 @@ struct HistoryDetailView: View {
                         .foregroundStyle(Color.appTextPrimary)
                     
                     VStack(alignment: .leading, spacing: 14) {
-                        analysisBlock(title: "Idea Suggestion", items: session.feedback.ideaSuggestion)
-                        analysisBlock(title: "Strengths", items: session.feedback.strengths)
-                        analysisBlock(title: "Weaknesses", items: session.feedback.weaknesses)
+                        AnalysisBlock(title: "Idea Suggestion",
+                                      items: session.feedback.ideaSuggestion,
+                                      systemImage: "lightbulb",
+                                      color: Color.appPrimary
+                        )
+                        AnalysisBlock(title: "Strengths",
+                                      items: session.feedback.strengths,
+                                      systemImage: "checkmark",
+                                      color: Color.green
+                        )
+                        
+                        AnalysisBlock(title: "Weaknesses",
+                                      items: session.feedback.weaknesses,
+                                      systemImage: "exclamationmark.triangle",
+                                      color: Color.orange
+                        )
                         
                         if !session.aiCorrections.isEmpty {
                             Text("Key Corrections")
@@ -96,23 +109,6 @@ struct HistoryDetailView: View {
         .navigationTitle("Session Detail")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-        }
-    }
-    
-    // shared with FeedbackResultView for consistent AI analysis display
-    private func analysisBlock(title: String, items: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.appTextSecondary)
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(items, id: \.self) { item in
-                    Text("• \(item)")
-                        .font(.body)
-                        .foregroundStyle(Color.appTextPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
         }
     }
 }

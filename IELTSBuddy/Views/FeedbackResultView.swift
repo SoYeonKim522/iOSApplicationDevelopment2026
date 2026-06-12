@@ -112,7 +112,7 @@ struct FeedbackResultView: View {
         VStack(alignment: .leading, spacing: -10) {
             HStack {
                 Text("Transcript")
-                    .font(.headline)
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.appTextPrimary)
 
                 Spacer()
@@ -149,7 +149,6 @@ struct FeedbackResultView: View {
         
         Text(transcript)
             .foregroundStyle(Color.appTextPrimary)
-            .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.appInnerField)
             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -192,10 +191,22 @@ struct FeedbackResultView: View {
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(Color.appTextPrimary)
 
-            VStack(alignment: .leading, spacing: 14) {
-                analysisBlock(title: "Idea Suggestion", items: comment.ideaSuggestion)
-                analysisBlock(title: "Strengths", items: comment.strengths)
-                analysisBlock(title: "Weaknesses", items: comment.weaknesses)
+            VStack(alignment: .leading, spacing: 24) {
+                AnalysisBlock(title: "Idea Suggestion",
+                              items: comment.ideaSuggestion,
+                              systemImage: "lightbulb",
+                              color: Color.appPrimary
+                )
+                AnalysisBlock(title: "Strengths",
+                              items: comment.strengths,
+                              systemImage: "checkmark",
+                              color: Color.green
+                )
+                AnalysisBlock(title: "Weaknesses",
+                              items: comment.weaknesses,
+                              systemImage: "exclamationmark.triangle",
+                              color: Color.orange
+                )
 
                 if !mistakeLists.isEmpty {
                     
@@ -221,22 +232,6 @@ struct FeedbackResultView: View {
                     .stroke(Color.appTextPrimary.opacity(0.06), lineWidth: 1)
             )
         }
-    }
-
-    func analysisBlock(title: String, items: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color.appTextSecondary)
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(items, id: \.self) { item in
-                        Text("• \(item)")
-                            .font(.body)
-                            .foregroundStyle(Color.appTextPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
     }
 
     func mistakeSubCard(_ log: ReviewLog) -> some View {
