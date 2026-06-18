@@ -45,11 +45,11 @@ struct EditDisplayNameView: View {
                 } else {
                     Text("\(trimmedNameCount)/\(UserProfile.maxNameLength)")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.appTextSecondary)
                 }
             } footer: {
                 Text("Letters, spaces, hyphens and apostrophes only.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
             }
 
             if let message = onboardingViewModel.errorMessage {

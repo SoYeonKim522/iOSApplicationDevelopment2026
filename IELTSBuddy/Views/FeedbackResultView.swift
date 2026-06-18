@@ -61,9 +61,10 @@ struct FeedbackResultView: View {
                             .foregroundStyle(.orange)
                         Text("Something went wrong")
                             .font(.headline)
+                            .foregroundStyle(Color.appTextPrimary)
                         Text(errorMessage)
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.appTextSecondary)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
@@ -82,6 +83,7 @@ struct FeedbackResultView: View {
                 }
             }
         }
+        .background(Color.appBackground)
         .navigationTitle("Feedback")
         .navigationBarBackButtonHidden(true)
         .toolbar(.hidden, for: .tabBar)
@@ -110,7 +112,8 @@ struct FeedbackResultView: View {
         VStack(alignment: .leading, spacing: -10) {
             HStack {
                 Text("Transcript")
-                    .font(.headline)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Color.appTextPrimary)
 
                 Spacer()
 
@@ -123,8 +126,8 @@ struct FeedbackResultView: View {
                         .font(.system(size: 30))
                         .foregroundColor(
                             audioFileURL == nil
-                            ? .secondary
-                            : .accentColor
+                            ? Color.appTextSecondary
+                            : Color.appPrimary
                         )
                         .padding(16)
                         .contentShape(Rectangle())
@@ -145,7 +148,10 @@ struct FeedbackResultView: View {
         }
         
         Text(transcript)
+            .foregroundStyle(Color.appTextPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.appInnerField)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
             .fixedSize(horizontal: false, vertical: true)
 
     }
@@ -155,9 +161,10 @@ struct FeedbackResultView: View {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(String(format: "%.1f", feedback.overallScore))
                     .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color.appTextPrimary)
                 Text("overall")
                         .font(.body)
+                        .foregroundStyle(Color.appTextSecondary)
             }
             
             LazyVGrid(
@@ -182,11 +189,24 @@ struct FeedbackResultView: View {
         return VStack(alignment: .leading, spacing: 16) {
             Text("AI Analysis")
                 .font(.title3.weight(.semibold))
+                .foregroundStyle(Color.appTextPrimary)
 
-            VStack(alignment: .leading, spacing: 14) {
-                analysisBlock(title: "Idea Suggestion", items: comment.ideaSuggestion)
-                analysisBlock(title: "Strengths", items: comment.strengths)
-                analysisBlock(title: "Weaknesses", items: comment.weaknesses)
+            VStack(alignment: .leading, spacing: 24) {
+                AnalysisBlock(title: "Idea Suggestion",
+                              items: comment.ideaSuggestion,
+                              systemImage: "lightbulb",
+                              color: Color.appPrimary
+                )
+                AnalysisBlock(title: "Strengths",
+                              items: comment.strengths,
+                              systemImage: "checkmark",
+                              color: Color.green
+                )
+                AnalysisBlock(title: "Weaknesses",
+                              items: comment.weaknesses,
+                              systemImage: "exclamationmark.triangle",
+                              color: Color.orange
+                )
 
                 if !mistakeLists.isEmpty {
                     
@@ -205,29 +225,13 @@ struct FeedbackResultView: View {
             .padding(18)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.secondarySystemGroupedBackground))
+                    .fill(Color.appSurface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                    .stroke(Color.appTextPrimary.opacity(0.06), lineWidth: 1)
             )
         }
-    }
-
-    func analysisBlock(title: String, items: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(items, id: \.self) { item in
-                        Text("• \(item)")
-                            .font(.body)
-                            .foregroundStyle(.primary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
     }
 
     func mistakeSubCard(_ log: ReviewLog) -> some View {
@@ -235,10 +239,10 @@ struct FeedbackResultView: View {
             HStack(alignment: .top) {
                 Text(log.type.rawValue.capitalized)
                     .font(.caption2.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Capsule().fill(Color.primary.opacity(0.06)))
+                    .background(Capsule().fill(Color.appTextPrimary.opacity(0.06)))
                 Spacer()
                 Button {
                     viewModel.toggleSaved(log, sessionId: viewModel.feedbackResult?.id ?? UUID())
@@ -252,7 +256,7 @@ struct FeedbackResultView: View {
                                 .fontWeight(.semibold)
                         }
                     }
-                    .foregroundStyle(bookmarkViewModel.isBookmarked(log.id) ? Color.green : Color.primary)
+                    .foregroundStyle(bookmarkViewModel.isBookmarked(log.id) ? Color.green : Color.appPrimary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 8)
                     .contentShape(Rectangle())
@@ -274,7 +278,7 @@ struct FeedbackResultView: View {
             if !log.explanation.isEmpty {
                 Text(log.explanation)
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Color.appTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -282,7 +286,7 @@ struct FeedbackResultView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.tertiarySystemGroupedBackground))
+                .fill(Color.appInnerField)
         )
     }
 
@@ -302,7 +306,7 @@ struct FeedbackResultView: View {
             }
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.accentColor, lineWidth: 1)
+                    .stroke(Color.appPrimary, lineWidth: 1)
             )
             .padding()
             .background(.ultraThinMaterial)
@@ -317,7 +321,7 @@ struct FeedbackResultView: View {
                 }
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.accentColor, lineWidth: 1)
+                        .stroke(Color.appPrimary, lineWidth: 1)
                 )
 
                 Button {
@@ -328,14 +332,14 @@ struct FeedbackResultView: View {
                         .padding(.vertical, 14)
                         .foregroundStyle(.white)
                 }
-                .background(Color.accentColor)
+                .background(Color.appPrimary)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .padding(.horizontal)
             .padding(.top, 8)
             .padding(.bottom, 0)
             .background(
-                Color(.systemBackground)
+                Color.appSurface
                     .ignoresSafeArea()
             )
         }
@@ -359,18 +363,19 @@ struct FeedbackResultView: View {
             HStack {
                 Text(title)
                     .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.appTextPrimary)
                 Spacer()
                 Text(String(format: "%.1f", score))
                     .font(.subheadline.monospacedDigit().weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.appTextSecondary)
             }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.primary.opacity(0.08))
+                        .fill(Color.appTextPrimary.opacity(0.08))
                     Capsule()
-                        .fill(Color.accentColor.opacity(0.85))
+                        .fill(Color.appPrimary.opacity(0.85))
                         .frame(width: max(geo.size.width * progress, progress > 0 ? 4 : 0))
                 }
             }
@@ -379,11 +384,11 @@ struct FeedbackResultView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.secondarySystemGroupedBackground))
+                .fill(Color.appSurface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+                .stroke(Color.appTextPrimary.opacity(0.06), lineWidth: 1)
         )
     }
 }
