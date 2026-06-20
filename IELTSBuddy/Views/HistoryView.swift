@@ -53,6 +53,8 @@ struct HistoryView: View {
                                 .forEach { viewModel.deleteSession($0) }
                         }
                     }
+                    .scrollContentBackground(.hidden)
+                    .background(Color.appBackground)
                 }
             }
             .background(Color.appBackground)
