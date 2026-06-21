@@ -28,6 +28,69 @@ struct OpenAIResponseFormat: Encodable {
     let type: String
 }
 
+// MARK: - Multimodal request DTOs (gpt-4o-audio-preview)
+
+struct OpenAIMultimodalChatCompletionRequest: Encodable {
+    let model: String
+    let modalities: [String]
+    let messages: [OpenAIMultimodalChatMessage]
+    let responseFormat: OpenAIResponseFormat?
+    let temperature: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case model
+        case modalities
+        case messages
+        case responseFormat = "response_format"
+        case temperature
+    }
+}
+
+struct OpenAIMultimodalChatMessage: Encodable {
+    let role: String
+    let content: OpenAIMultimodalMessageContent
+}
+
+enum OpenAIMultimodalMessageContent: Encodable {
+    case text(String)
+    case parts([OpenAIMultimodalContentPart])
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .text(let value):
+            try container.encode(value)
+        case .parts(let parts):
+            try container.encode(parts)
+        }
+    }
+}
+
+struct OpenAIMultimodalContentPart: Encodable {
+    let type: String
+    let text: String?
+    let inputAudio: OpenAIInputAudioPayload?
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case text
+        case inputAudio = "input_audio"
+    }
+
+    static func text(_ value: String) -> Self {
+        Self(type: "text", text: value, inputAudio: nil)
+    }
+
+    static func inputAudio(data: String, format: String) -> Self {
+        Self(type: "input_audio", text: nil, inputAudio: .init(data: data, format: format))
+    }
+}
+
+struct OpenAIInputAudioPayload: Encodable {
+    let data: String
+    let format: String
+}
+
 // MARK: - Response DTOs
 
 struct OpenAIChatCompletionResponse: Decodable {

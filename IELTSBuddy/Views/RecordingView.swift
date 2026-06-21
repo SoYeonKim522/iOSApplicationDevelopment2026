@@ -167,11 +167,9 @@ struct RecordingView: View {
             }
 
             viewModel.onNavigateToFeedback = {
-                onNavigate(Route.feedback(
-                    question: viewModel.currentQuestionText,
-                    transcript: viewModel.transcript,
-                    url: viewModel.audioFileURL
-                ))
+                guard let attempt = viewModel.makeSpeakingAttempt() else { return }
+                AttemptMediaStore.shared.register(attempt)
+                onNavigate(Route.feedback(attemptId: attempt.id))
             }
         }
         .onDisappear {
