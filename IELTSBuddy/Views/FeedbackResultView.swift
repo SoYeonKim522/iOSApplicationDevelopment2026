@@ -7,9 +7,7 @@ import SwiftUI
 
 struct FeedbackResultView: View {
 
-    let questionText: String
-    let transcript: String
-    let audioFileURL: URL?
+    let attempt: SpeakingAttempt
     let onExitToRoot: () -> Void //'x' button
     let onNextQuestion: () -> Void
 
@@ -19,24 +17,18 @@ struct FeedbackResultView: View {
     @ObservedObject private var bookmarkViewModel = BookmarkViewModel.shared
 
     init(
-        questionText: String,
-        transcript: String,
-        audioFileURL: URL?,
+        attempt: SpeakingAttempt,
         services: AppServices,
         onExitToRoot: @escaping () -> Void,
         onNextQuestion: @escaping () -> Void
     ) {
-        self.questionText = questionText
-        self.transcript = transcript
-        self.audioFileURL = audioFileURL
+        self.attempt = attempt
         self.onExitToRoot = onExitToRoot
         self.onNextQuestion = onNextQuestion
 
         _viewModel = StateObject(
             wrappedValue: FeedbackResultViewModel(
-                questionText: questionText,
-                transcript: transcript,
-                audioFileURL: audioFileURL,
+                attempt: attempt,
                 services: services
             )
         )
@@ -125,14 +117,14 @@ struct FeedbackResultView: View {
                           : "speaker.wave.2.circle.fill")
                         .font(.system(size: 30))
                         .foregroundColor(
-                            audioFileURL == nil
+                            viewModel.audioFileURL == nil
                             ? Color.appTextSecondary
                             : Color.appPrimary
                         )
                         .padding(16)
                         .contentShape(Rectangle())
                 }
-                .disabled(audioFileURL == nil)
+                .disabled(viewModel.audioFileURL == nil)
                 .accessibilityLabel(
                     viewModel.isPlaying
                     ? "Stop playback"
@@ -147,7 +139,7 @@ struct FeedbackResultView: View {
             }
         }
         
-        Text(transcript)
+        Text(viewModel.transcript)
             .foregroundStyle(Color.appTextPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.appInnerField)
@@ -396,9 +388,11 @@ struct FeedbackResultView: View {
 #Preview {
     NavigationStack {
         FeedbackResultView(
-            questionText: "Describe your hometown.",
-            transcript: "My hometown is very beautiful.",
-            audioFileURL: URL(string: "file:///nonexistent.caf"),
+            attempt: SpeakingAttempt(
+                question: "Describe your hometown.",
+                transcript: "My hometown is very beautiful.",
+                audioURL: URL(string: "file:///nonexistent.caf")
+            ),
             services: .preview,
             onExitToRoot: {},
             onNextQuestion: {}

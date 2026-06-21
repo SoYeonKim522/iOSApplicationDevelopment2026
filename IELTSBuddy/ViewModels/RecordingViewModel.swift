@@ -22,6 +22,7 @@ final class RecordingViewModel: ObservableObject {
     @Published private(set) var activeError: RecordingError?
     @Published private(set) var activeErrorPlacement: RecordingErrorPlacement?
     @Published private(set) var audioFileURL: URL?
+    @Published private(set) var currentAttemptId: UUID?
 
     var onNavigateToFeedback: (() -> Void)?
 
@@ -64,6 +65,7 @@ final class RecordingViewModel: ObservableObject {
         currentQuestion = nil
         transcript = ""
         audioFileURL = nil
+        currentAttemptId = nil
         hasStartedRecordingAttempt = false
         recordingTime = 0
         stopTimer()
@@ -95,6 +97,7 @@ final class RecordingViewModel: ObservableObject {
             stopRecordingAndHandleNavigation()
         } else {
             hasStartedRecordingAttempt = true
+            currentAttemptId = UUID()
             clearActiveError(for: .practiceAction)
             manager.startRecording()
             startTimer()
@@ -149,6 +152,17 @@ final class RecordingViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    func makeSpeakingAttempt() -> SpeakingAttempt? {
+        guard let currentAttemptId else { return nil }
+
+        return SpeakingAttempt(
+            id: currentAttemptId,
+            question: currentQuestionText,
+            transcript: transcript,
+            audioURL: audioFileURL
+        )
+    }
+
     private func stopRecordingAndHandleNavigation() {
         let trimmedTranscript = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -186,6 +200,7 @@ final class RecordingViewModel: ObservableObject {
     func resetForNextQuestion() {
         transcript = ""
         audioFileURL = nil
+        currentAttemptId = nil
         hasStartedRecordingAttempt = false
         clearActiveError()
         currentQuestion = nil

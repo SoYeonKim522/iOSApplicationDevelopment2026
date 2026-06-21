@@ -13,6 +13,8 @@ enum AIFeedbackServiceError: LocalizedError {
     case emptyModelContent
     case decodingFailed(underlying: Error)
     case networkFailed(underlying: Error)
+    case missingInputMedia
+    case audioPreparationFailed(underlying: Error)
 
     var errorDescription: String? {
         switch self {
@@ -33,6 +35,10 @@ enum AIFeedbackServiceError: LocalizedError {
             return "Failed to decode feedback JSON: \(underlying.localizedDescription)"
         case .networkFailed(let underlying):
             return "Network error: \(underlying.localizedDescription)"
+        case .missingInputMedia:
+            return "No audio or transcript is available to evaluate."
+        case .audioPreparationFailed(let underlying):
+            return "Failed to prepare audio for evaluation: \(underlying.localizedDescription)"
         }
     }
 }
@@ -49,34 +55,123 @@ final class AIFeedbackService: AIFeedbackProviding {
         self.apiKeyProvider = apiKeyProvider
     }
 
-    func fetchFeedback(question: String, userAnswer: String) async throws -> AIFeedback {
-        let apiKey: String
+    func fetchFeedback(question: String, userAnswer: String, audioURL: URL?) async throws -> AIFeedback {
+        let trimmedQuestion = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedAnswer = userAnswer.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedAudioURL = audioURL.flatMap { url in
+            FileManager.default.fileExists(atPath: url.path) ? url : nil
+        }
+
+        let hasAudio = resolvedAudioURL != nil
+        let hasTranscript = !trimmedAnswer.isEmpty
+
+        guard hasAudio || hasTranscript else {
+            throw AIFeedbackServiceError.missingInputMedia
+        }
+
+        if hasAudio, let resolvedAudioURL {
+            return try await fetchAudioFeedback(
+                question: trimmedQuestion,
+                userAnswer: trimmedAnswer,
+                audioURL: resolvedAudioURL,
+                includesTranscript: hasTranscript
+            )
+        }
+
+        return try await fetchTranscriptOnlyFeedback(
+            question: trimmedQuestion,
+            userAnswer: trimmedAnswer
+        )
+    }
+
+    // MARK: - Audio evaluation (primary path)
+
+    private func fetchAudioFeedback(
+        question: String,
+        userAnswer: String,
+        audioURL: URL,
+        includesTranscript: Bool
+    ) async throws -> AIFeedback {
+        let apiKey = try resolveAPIKey()
+        let url = try resolveEndpoint()
+
+        let encodedAudio: (data: String, format: String)
         do {
-            apiKey = try apiKeyProvider()
+            encodedAudio = try await OpenAIAudioEncoder.base64EncodedAudio(from: audioURL)
         } catch {
-            throw AIFeedbackServiceError.missingAPIKey
+            throw AIFeedbackServiceError.audioPreparationFailed(underlying: error)
         }
 
-        guard let url = URL(string: OpenAIConfig.endpoint) else {
-            throw AIFeedbackServiceError.invalidURL
-        }
+        let userText = Self.buildMultimodalUserText(
+            question: question,
+            userAnswer: userAnswer,
+            includesTranscript: includesTranscript
+        )
 
-        let systemContent = Self.buildOpenAISystemInstruction()
-        let userContent = Self.buildUserContent(question: question, userAnswer: userAnswer)
+        let body = OpenAIMultimodalChatCompletionRequest(
+            model: OpenAIConfig.audioFeedbackModel,
+            modalities: ["text"],
+            messages: [
+                OpenAIMultimodalChatMessage(
+                    role: "system",
+                    content: .text(Self.buildOpenAISystemInstruction())
+                ),
+                OpenAIMultimodalChatMessage(
+                    role: "user",
+                    content: .parts([
+                        .text(userText),
+                        .inputAudio(data: encodedAudio.data, format: encodedAudio.format),
+                    ])
+                ),
+            ],
+            responseFormat: nil,
+            temperature: 0.3
+        )
+
+        let data = try await performRequest(url: url, apiKey: apiKey, body: body)
+        return try decodeFeedback(from: data)
+    }
+
+    // MARK: - Transcript-only fallback
+
+    private func fetchTranscriptOnlyFeedback(question: String, userAnswer: String) async throws -> AIFeedback {
+        let apiKey = try resolveAPIKey()
+        let url = try resolveEndpoint()
 
         let body = OpenAIChatCompletionRequest(
             model: OpenAIConfig.feedbackModel,
             messages: [
-                OpenAIChatMessage(role: "system", content: systemContent),
-                OpenAIChatMessage(role: "user", content: userContent),
+                OpenAIChatMessage(role: "system", content: Self.buildOpenAISystemInstruction()),
+                OpenAIChatMessage(role: "user", content: Self.buildUserContent(question: question, userAnswer: userAnswer)),
             ],
             responseFormat: .init(type: "json_object")
         )
 
-        let encoder = JSONEncoder()
+        let data = try await performRequest(url: url, apiKey: apiKey, body: body)
+        return try decodeFeedback(from: data)
+    }
+
+    // MARK: - Networking
+
+    private func resolveAPIKey() throws -> String {
+        do {
+            return try apiKeyProvider()
+        } catch {
+            throw AIFeedbackServiceError.missingAPIKey
+        }
+    }
+
+    private func resolveEndpoint() throws -> URL {
+        guard let url = URL(string: OpenAIConfig.endpoint) else {
+            throw AIFeedbackServiceError.invalidURL
+        }
+        return url
+    }
+
+    private func performRequest<Body: Encodable>(url: URL, apiKey: String, body: Body) async throws -> Data {
         let bodyData: Data
         do {
-            bodyData = try encoder.encode(body)
+            bodyData = try JSONEncoder().encode(body)
         } catch {
             throw AIFeedbackServiceError.invalidResponse
         }
@@ -104,6 +199,10 @@ final class AIFeedbackService: AIFeedbackProviding {
             throw AIFeedbackServiceError.httpFailure(statusCode: http.statusCode, message: message)
         }
 
+        return data
+    }
+
+    private func decodeFeedback(from data: Data) throws -> AIFeedback {
         let openAIResponse: OpenAIChatCompletionResponse
         do {
             openAIResponse = try JSONDecoder().decode(OpenAIChatCompletionResponse.self, from: data)
@@ -130,7 +229,7 @@ final class AIFeedbackService: AIFeedbackProviding {
         }
     }
 
-    // MARK: - OpenAI helpers
+    // MARK: - Prompt helpers
 
     private static func buildOpenAISystemInstruction() -> String {
         let core = buildSystemInstruction()
@@ -141,37 +240,76 @@ final class AIFeedbackService: AIFeedbackProviding {
         """
     }
 
-    // MARK: - Shared prompt helpers
-
     private static func buildSystemInstruction() -> String {
         """
-        You are a strict IELTS Speaking examiner. Evaluate the learner's answer on the four official criteria: Fluency & Coherence (F&C), Lexical Resource (LR), Grammatical Range & Accuracy (GRA), Pronunciation (infer from text; note limitations).
+        You are a strict, certified IELTS Speaking examiner with over 15 years of experience. You evaluate exactly like real British Council, IDP, and Cambridge examiners using the official IELTS Speaking Band Descriptors.
+        Assume this is an IELTS Speaking Part 1 response.
 
-        SCORING RULES — apply these caps before assigning any score:
-        - Irrelevant answer (does not address the question): F&C max 5.5, overallScore max 5.5
-        - No reasoning or explanation: F&C max 6.0
-        - No examples given: overallScore max 6.5
-        - Repetitive or limited vocabulary: LR max 6.5
-        - Fluent but meaningless/empty content: F&C max 6.0, overallScore max 6.0
+        You are given both the audio recording (primary source) and the STT transcript (supporting only).
 
-        CONTENT DEPTH — evaluate internally and reflect in F&C and overallScore:
-        - Does the answer directly address the question? (relevance)
-        - Does it include a reason or explanation? (depth)
-        - Does it include a concrete example? (support)
-        - Is the reasoning clear and logical? (coherence)
+        [AUDIO-FIRST POLICY - STRICT]
+        - Audio is the absolute primary source for Fluency & Coherence, and Pronunciation.
+        - Evaluate real spoken delivery: natural rhythm, intonation, stress patterns, connected speech, chunking, hesitations, and self-corrections.
 
-        Return ONLY valid JSON, no markdown. camelCase keys:
-        - "questionText": string (echo question as-is)
-        - "userAnswer": string (echo answer as-is)
-        - "overallScore": number (0–9, 0.5 steps)
-        - "fluencyScore": number
-        - "vocabularyScore": number
-        - "grammarScore": number
-        - "pronunciationScore": number
-        - "feedback": {"strengths":[...],"weaknesses":[...],"ideaSuggestion":[...]}.
-        CRITICAL: Each array MUST contain exactly 1-3 highly specific, actionable strings (max 15 words each). Do NOT use generic praise. Tell the user EXACTLY what to fix.
-        - "aiCorrections": array of {"original":"...","corrected":"...","type":"grammar"|"vocabulary"|"pronunciation","explanation":"..."}. 
-        CRITICAL REQUIREMENT: You MUST provide at least 1 correction. Exhaustively scan for unnatural phrasing, grammatical errors, or poor vocabulary. If the user's answer is completely flawless, you MUST still provide at least 1 advanced, native-sounding alternatives as "vocabulary". Keep each explanation concise but educational. Do NOT flag punctuation.
+        OFFICIAL IELTS CRITERIA:
+        1. Fluency & Coherence (F&C) - Natural flow, minimal hesitation, self-correction, AND logical development with appropriate relevance and extension for Part 1.
+        2. Lexical Resource (LR)
+        3. Grammatical Range & Accuracy (GRA)
+        4. Pronunciation - Intelligibility, word stress, sentence stress, intonation, rhythm, linking, and individual sounds.
+
+        PART 1 SPECIFIC GUIDELINES:
+        - Part 1 answers are typically 15-30 seconds (2-4 sentences). Do not expect long development.
+        - Focus feedback on natural extension, reasons, and personal details rather than specific examples.
+
+        PRONUNCIATION EVALUATION (Very Important):
+        - Pay close attention to word stress (e.g. fulFILling NOT FULfilling, reWARding NOT REWarding).
+        - Check intonation, rhythm, chunking, and individual sounds (work vs walk, etc.).
+        - If word stress or intonation is noticeably wrong, lower the Pronunciation score and mention it specifically in weaknesses or aiCorrections.
+
+        IMPORTANT STABILITY & CORRECTION RULES:
+        - Vocabulary and Grammar scores must stay consistent for the same content unless there are clear spoken errors in the final utterance.
+        - Self-rephrasing, false starts, mid-sentence corrections, and hesitations are Fluency & Coherence issues — NEVER treat them as grammar or vocabulary errors in aiCorrections.
+        - Do NOT lower Vocab or Grammar due to hesitations, accent, or delivery issues. Those affect only Fluency & Coherence or Pronunciation.
+        - Pronunciation score should remain fair even with a noticeable Korean accent if intelligibility is maintained.
+
+        SCORING RULES (Apply these caps first):
+        - Completely irrelevant or off-topic: F&C ≤ 5.5, Overall ≤ 5.5
+        - Very short or no extension/reasons: F&C ≤ 6.0, Overall ≤ 6.0
+        - Very repetitive or basic vocabulary: LR ≤ 6.5
+
+        Return ONLY valid JSON. No markdown, no extra text. Use camelCase keys.
+
+        {
+          "questionText": string,
+          "userAnswer": string,
+          "overallScore": number,
+          "fluencyScore": number,
+          "vocabularyScore": number,
+          "grammarScore": number,
+          "pronunciationScore": number,
+          
+          "feedback": {
+            "strengths": [array of 1-3 highly specific, actionable strings (max 15 words each)],
+            "weaknesses": [array of 1-3 highly specific, actionable strings (max 15 words each)],
+            "ideaSuggestion": [array of 1-3 concrete improvement ideas suitable for Part 1 (max 15 words each)]
+          },
+          
+          "aiCorrections": [
+            {
+              "original": "...",
+              "corrected": "...",
+              "type": "grammar" | "vocabulary" | "pronunciation",
+              "explanation": "..."
+            }
+          ]
+        }
+
+        CRITICAL RULES:
+        - In aiCorrections, ONLY correct real grammar, vocabulary, or pronunciation errors in the final spoken content. 
+        - NEVER flag self-rephrasing, false starts, or mid-sentence corrections as grammar or vocabulary mistakes.
+        - Always provide at least 1 correction when there are real issues. If almost perfect, give one advanced alternative as vocabulary.
+        - Idea suggestions should focus on adding reasons, personal details, or natural extension for Part 1.
+        - Explanations must be concise, educational, and examiner-like.
         """
     }
 
@@ -185,4 +323,22 @@ final class AIFeedbackService: AIFeedbackProviding {
         """
     }
 
+    private static func buildMultimodalUserText(
+        question: String,
+        userAnswer: String,
+        includesTranscript: Bool
+    ) -> String {
+        if includesTranscript {
+            return """
+            QUESTION: \(question)
+            TRANSCRIPT: \(userAnswer)
+            Evaluate the user's spoken response based on the audio, using the transcript as supplementary context.
+            """
+        }
+
+        return """
+        QUESTION: \(question)
+        Evaluate the user's spoken response based on the audio.
+        """
+    }
 }

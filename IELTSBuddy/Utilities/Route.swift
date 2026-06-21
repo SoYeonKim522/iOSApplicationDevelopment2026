@@ -9,5 +9,5 @@ import Foundation
 
 enum Route: Hashable {
     case recording
-    case feedback(question: String, transcript: String, url: URL?)
+    case feedback(attemptId: UUID)
 }

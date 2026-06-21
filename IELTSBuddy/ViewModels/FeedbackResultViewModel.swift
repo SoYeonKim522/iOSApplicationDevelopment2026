@@ -11,9 +11,11 @@ import Combine
 
 @MainActor
 final class FeedbackResultViewModel: ObservableObject {
-    let questionText: String
-    let transcript: String
-    let audioFileURL: URL?
+    let attempt: SpeakingAttempt
+
+    var questionText: String { attempt.question }
+    var transcript: String { attempt.transcript }
+    var audioFileURL: URL? { attempt.audioURL }
 
     @Published private(set) var feedbackResult: AIFeedback?
     @Published private(set) var isLoading = true
@@ -28,17 +30,13 @@ final class FeedbackResultViewModel: ObservableObject {
     private let audioPlaybackManager: AudioPlaybackManaging
 
     init(
-        questionText: String,
-        transcript: String,
-        audioFileURL: URL?,
+        attempt: SpeakingAttempt,
         services: AppServices,
         historyViewModel: HistoryViewModel? = nil,
         audioPlaybackManager: AudioPlaybackManaging? = nil
     ){
         self.bookmarkViewModel = BookmarkViewModel.shared
-        self.questionText = questionText
-        self.transcript = transcript
-        self.audioFileURL = audioFileURL
+        self.attempt = attempt
         self.audioPlaybackManager = audioPlaybackManager ?? AVAudioPlaybackManager()
         self.aiFeedbackService = services.aiFeedback
         self.historyViewModel = historyViewModel ?? HistoryViewModel()
@@ -61,9 +59,13 @@ final class FeedbackResultViewModel: ObservableObject {
 
         do {
             let result = try await aiFeedbackService.fetchFeedback(
-                question: questionText,
-                userAnswer: transcript
+                question: attempt.question,
+                userAnswer: attempt.transcript,
+                audioURL: attempt.audioURL
             )
+            print(result)
+            print("____________")
+            dump(result)
             feedbackResult = result
             historyViewModel.saveSession(result)
         } catch {

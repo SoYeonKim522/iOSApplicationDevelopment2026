@@ -8,5 +8,5 @@
 import Foundation
 
 protocol AIFeedbackProviding {
-    func fetchFeedback(question: String, userAnswer: String) async throws -> AIFeedback
+    func fetchFeedback(question: String, userAnswer: String, audioURL: URL?) async throws -> AIFeedback
 }
