@@ -20,6 +20,11 @@ struct HistoryDetailView: View {
                     .foregroundStyle(Color.appTextPrimary)
                     .padding(.top, 8)
                 
+                Text("“\(session.userAnswer)”")
+                    .font(.headline)
+                    .italic()
+                    .foregroundStyle(Color.appTextSecondary)
+                
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(String(format: "%.1f", session.overallScore))
                         .font(.system(size: 30, weight: .bold, design: .rounded))

@@ -54,20 +54,29 @@ struct DashboardView: View {
                             viewModel: recordingViewModel,
                             onNavigate: { route in path.append(route) }
                         )
-                case .feedback(let question, let transcript, let url):
-                    FeedbackResultView(
-                        questionText: question,
-                        transcript: transcript,
-                        audioFileURL: url,
-                        services: services,
-                        onExitToRoot: {
-                            path = NavigationPath()
-                        },
-                        onNextQuestion: {
-                            recordingViewModel.resetForNextQuestion()
-                            path.removeLast()
-                        }
-                    )
+                case .feedback(let attemptId):
+                    if let attempt = AttemptMediaStore.shared.attempt(for: attemptId) {
+                        FeedbackResultView(
+                            attempt: attempt,
+                            services: services,
+                            onExitToRoot: {
+                                AttemptMediaStore.shared.remove(id: attemptId)
+                                recordingViewModel.resetForNextQuestion()
+                                path = NavigationPath()
+                            },
+                            onNextQuestion: {
+                                AttemptMediaStore.shared.remove(id: attemptId)
+                                recordingViewModel.resetForNextQuestion()
+                                path.removeLast()
+                            }
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            "Practice session not found",
+                            systemImage: "exclamationmark.triangle",
+                            description: Text("Start a new recording and try again.")
+                        )
+                    }
                 }
             }
             .background(Color.appBackground)
